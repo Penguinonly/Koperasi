@@ -2,12 +2,15 @@
 
 Sistem koperasi berbasis Laravel untuk mengelola anggota, karyawan, pinjaman, pembayaran, absensi, approval, dan portal mandiri anggota.
 
+Implementasi utama berada di root repository. Folder `koperasi-digital-monorepo/` adalah prototipe TypeScript terpisah dan belum terhubung ke aplikasi Laravel. Baca [PANDUAN_PROGRAM.md](PANDUAN_PROGRAM.md) untuk peta sistem, alur fitur, API, data, setup, dan batasan implementasi.
+
 ## Status Proyek
 
 Lihat [PROJECT_STATUS.md](PROJECT_STATUS.md) untuk daftar fitur yang sudah ditambahkan, fitur yang masih sebagian, dan pekerjaan berikutnya.
 
 Dokumen teknis lain:
 
+- [PANDUAN_PROGRAM.md](PANDUAN_PROGRAM.md) - panduan menyeluruh untuk aplikasi Laravel dan prototipe monorepo.
 - [ADMIN_FEATURES.md](ADMIN_FEATURES.md) - panduan fitur, route, role, dan batasan area admin.
 - [ARCHITECTURE.md](ARCHITECTURE.md) - rancangan arsitektur dan domain.
 - [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) - struktur database.

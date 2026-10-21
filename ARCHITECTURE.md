@@ -1,5 +1,7 @@
 # Koperasi Digital - Backend Architecture & Setup Guide
 
+> **Status dokumen:** ini blueprint arsitektur awal. Beberapa bagian menjelaskan struktur atau pekerjaan yang direncanakan, bukan implementasi Laravel saat ini. Untuk panduan aktual, lihat [PANDUAN_PROGRAM.md](PANDUAN_PROGRAM.md); route aktif ada di `routes/`, dan skema database aktif ada di `database/migrations/`.
+
 **Project Type**: Laravel 12 API Backend for Cooperative Loan & Attendance System  
 **Database**: SQLite (dev), PostgreSQL (production)  
 **Auth**: Laravel Sanctum (API tokens with role-based access)  

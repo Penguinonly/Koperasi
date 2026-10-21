@@ -1,6 +1,7 @@
 # Koperasi Harmoni - Status Implementasi
 
-**Tanggal audit:** 15 Oktober 2026  
+**Tanggal audit:** 21 Oktober 2026
+
 **Framework:** Laravel 12, PHP 8.2+, SQLite untuk development, Vite + Tailwind CSS v4  
 **Status:** Fondasi backend, area admin dasar, portal anggota, dan backend token pembayaran offline tersedia. Integrasi Android, UI validasi pinjaman, UI operasional collector, serta rekonsiliasi pembayaran masih menjadi pekerjaan berikutnya.
 
@@ -236,11 +237,12 @@ API terlindungi Sanctum:
 | Pembayaran | QR online lama dan backend token offline tersedia: sync, audit, alokasi, keyring, expiry | Integrasi Android offline, UI collector, rekonsiliasi konflik/setoran, dan laporan belum tersedia |
 | Absensi | Model dan API IoT tersedia | Belum ada UI admin/collector dan integrasi perangkat nyata |
 | Permissions | Role dan permission tersedia | Middleware web saat ini memeriksa role; permission belum dipakai pada UI web |
+| Tabungan | Migration, model, service, dan controller ledger tersedia di workspace | Belum dipasang pada route atau UI; masih berupa kerangka kerja |
 | Testing | API auth, portal anggota, token sync, dan validasi pinjaman memiliki feature test (19 test/111 assertion terakhir) | Uji konkurensi di database produksi, UI riwayat, dan rekonsiliasi masih perlu dibuat |
 
 ## 4. Fitur yang Belum Ditambahkan
 
-Pekerjaan yang belum tersedia mencakup aplikasi Android offline, UI collector dan rekonsiliasi token, UI Riwayat Pinjaman, Data Admin/permission, absensi, serta import/export dan audit perubahan.
+Pekerjaan yang belum tersedia mencakup aplikasi Android offline, UI collector dan rekonsiliasi token, UI Riwayat Pinjaman, Data Admin/permission, absensi, ledger tabungan yang dipasang ke route/UI, serta import/export dan audit perubahan.
 
 ## 5. Struktur File Penting
 

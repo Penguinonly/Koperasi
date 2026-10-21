@@ -2,6 +2,8 @@
 
 > This file is a reference for the migration structure. Each table below will have its own migration file.
 
+> **Catatan:** SQL di dokumen ini adalah referensi desain dan dapat berbeda dari database Laravel yang aktif. Gunakan berkas di `database/migrations/` sebagai sumber kebenaran implementasi; ringkasan hubungan tabel saat ini ada di [PANDUAN_PROGRAM.md](PANDUAN_PROGRAM.md).
+
 ---
 
 ## Core Tables

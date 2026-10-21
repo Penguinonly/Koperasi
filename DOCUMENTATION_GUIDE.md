@@ -1,5 +1,7 @@
 # 📚 Backend Setup Documentation - Complete Guide
 
+> **Catatan:** dokumen ini adalah panduan dan checklist implementasi awal. Untuk langkah menjalankan aplikasi saat ini, gunakan [README.md](README.md). Untuk peta implementasi yang berjalan saat ini, gunakan [PANDUAN_PROGRAM.md](PANDUAN_PROGRAM.md) dan [PROJECT_STATUS.md](PROJECT_STATUS.md).
+
 ## Overview
 
 Ini adalah dokumentasi lengkap untuk setup **Koperasi Digital Backend** dengan Laravel 12 + Sanctum Authentication + Role-Based Access Control.

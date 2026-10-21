@@ -5,6 +5,8 @@
 
 **Snapshot implementasi:** 15 Oktober 2026. Login, shell admin, dashboard admin, Data Karyawan, Data Nasabah, detail anggota/pinjaman, kalender, workspace collector dasar, portal anggota, UI Validasi Pinjaman, serta backend token pembayaran offline tersedia. UI Riwayat Pinjaman, UI collector untuk token offline, rekonsiliasi, absensi, dan Data Admin masih belum tersedia.
 
+> **Perubahan produk:** keputusan setelah snapshot ini mengganti layar operasional menjadi satu halaman admin tabungan anggota. Halaman karyawan/anggota dan layar web lama telah dihapus. Kebutuhan UI aktif serta interaksi setoran/penarikan dijelaskan di [PANDUAN_PROGRAM.md](PANDUAN_PROGRAM.md); isi lain dokumen ini adalah referensi desain historis.
+
 ## 1. Keputusan Produk
 
 UI akan dibangun sebagai **operational workspace**, bukan landing page. Pengguna utama membutuhkan daftar data yang cepat dipindai, filter yang jelas, status yang mudah dibedakan, dan tindakan CRUD yang dekat dengan data.

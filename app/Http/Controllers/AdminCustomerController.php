@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\Loan;
-use App\Services\MemberAccountProvisioner;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -37,13 +36,6 @@ class AdminCustomerController extends Controller
             'customers' => $customers,
             'active' => 'customers',
         ]);
-    }
-
-    public function provisionUsers(MemberAccountProvisioner $provisioner)
-    {
-        $created = $provisioner->provision();
-
-        return redirect()->route('admin.customers')->with('success', "{$created} akun anggota berhasil dibuat.");
     }
 
     public function show(Customer $customer)

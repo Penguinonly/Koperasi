@@ -3,6 +3,8 @@
 **Pembaruan:** 15 Oktober 2026  
 **Snapshot validasi:** `php artisan test` lulus, 19 test dan 111 assertion.
 
+> **Status dokumen:** snapshot dan roadmap ini mendahului perubahan produk 21 Oktober 2026. Route aktif sekarang hanya login, halaman admin tabungan, dan health check API. Lihat [PANDUAN_PROGRAM.md](PANDUAN_PROGRAM.md) dan [PROJECT_STATUS.md](PROJECT_STATUS.md) untuk kondisi terbaru.
+
 ## Status Saat Ini
 
 Fondasi Laravel, Sanctum/RBAC dasar, data anggota CSV, workspace admin/collector, portal anggota, QR online lama, serta backend token pembayaran offline v1 sudah tersedia. Backend token mencakup migration, keypair Ed25519, keyring rotasi, paket token harian, sequence per pinjaman, konfirmasi collector/anggota, alokasi parsial, audit sync, idempotensi, dan expiry grace 24 jam.

@@ -37,30 +37,12 @@ class WebAuthController extends Controller
             return redirect()->intended(route('admin.dashboard'));
         }
 
-        if ($request->user()->hasRole('collector')) {
-            return redirect()->intended(route('dashboard'));
-        }
-
-        if ($request->user()->hasRole('customer')) {
-            if (!$request->user()->customer) {
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-
-                throw ValidationException::withMessages([
-                    'email' => 'Akun anggota belum terhubung ke data anggota. Hubungi pengurus koperasi.',
-                ]);
-            }
-
-            return redirect()->intended(route('member.dashboard'));
-        }
-
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         throw ValidationException::withMessages([
-            'email' => 'Role akun belum memiliki halaman web.',
+            'email' => 'Halaman ini hanya dapat diakses oleh admin koperasi.',
         ]);
     }
 

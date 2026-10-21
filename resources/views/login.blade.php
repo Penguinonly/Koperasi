@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ config('app.name', 'Laravel') }} - Login</title>
+        <title>{{ config('app.name', 'Koperasi Harmoni') }} - Login Admin</title>
 
         @vite(['resources/css/login.css', 'resources/js/app.js'])
     </head>
@@ -26,7 +26,7 @@
                     @csrf
 
                     <h1 class="ml-[130px] h-[38.13px] w-[337px] whitespace-nowrap text-center text-[46px] font-medium leading-normal tracking-[0] text-[#1e1e1e]">
-                        Login
+                        Login Admin
                     </h1>
 
                     <div class="mt-[224.9px] flex h-[92.85px] w-[602px] flex-col gap-[0.3px]">

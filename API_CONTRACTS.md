@@ -1,5 +1,7 @@
 # API Endpoint Contracts
 
+> **Status saat ini:** kontrak di bawah adalah referensi API lama. Per 21 Oktober 2026, route bisnis tersebut sudah dinonaktifkan; hanya `GET /api/health` aktif. API tidak digunakan untuk operasi tabungan admin. Lihat [PANDUAN_PROGRAM.md](PANDUAN_PROGRAM.md) untuk route web tabungan aktif.
+
 > Base URL: `http://localhost:8000/api` (development)  
 > Auth: Bearer token via `Authorization: Bearer <token>` header
 

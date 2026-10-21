@@ -507,3 +507,25 @@ ALTER TABLE payments ADD CONSTRAINT chk_payment_amount CHECK (amount > 0);
 - Timestamps use UTC; convert to Asia/Jakarta in application
 - Foreign key cascade delete configured appropriately
 - Unique constraints prevent duplicate entries where needed
+
+## Savings Ledger (Laravel Migration)
+
+The active Laravel application uses the following additional table from `database/migrations/2026_10_21_000001_create_savings_transactions_table.php`:
+
+```sql
+CREATE TABLE savings_transactions (
+    id BIGINT PRIMARY KEY,
+    customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
+    recorded_by BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('DEPOSIT', 'WITHDRAWAL')),
+    amount DECIMAL(12, 2) NOT NULL,
+    balance_after DECIMAL(12, 2) NOT NULL,
+    idempotency_key UUID NOT NULL UNIQUE,
+    reference_code VARCHAR(40) NOT NULL UNIQUE,
+    note TEXT NULL,
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL
+);
+```
+
+The transaction rows are the source of truth for savings balances. The current balance is the `balance_after` value on the latest transaction; members without ledger rows display zero. For the exact database-specific migration, use the Laravel migration rather than this SQL illustration.

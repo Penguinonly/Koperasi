@@ -24,10 +24,7 @@ class DatabaseSeeder extends Seeder
         $roles = \App\Models\Role::query()->pluck('id', 'name');
 
         $users = [
-            ['name' => 'Master Admin', 'email' => 'master@koperasi.id', 'role' => 'master_admin', 'employee_id' => 'MST001', 'platform' => 'DESKTOP'],
             ['name' => 'Admin Koperasi', 'email' => 'admin@koperasi.id', 'role' => 'admin', 'employee_id' => 'ADM001', 'platform' => 'DESKTOP'],
-            ['name' => 'Budi Collector', 'email' => 'collector@koperasi.id', 'role' => 'collector', 'employee_id' => 'EMP001', 'platform' => 'DESKTOP'],
-            ['name' => 'Nasabah Demo', 'email' => 'customer@koperasi.id', 'role' => 'customer', 'employee_id' => null, 'platform' => 'ANDROID'],
         ];
 
         foreach ($users as $user) {

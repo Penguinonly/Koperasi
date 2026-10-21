@@ -55,6 +55,16 @@ class Customer extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function savingsTransactions()
+    {
+        return $this->hasMany(SavingsTransaction::class);
+    }
+
+    public function latestSavingsTransaction()
+    {
+        return $this->hasOne(SavingsTransaction::class)->latestOfMany();
+    }
+
     public function refreshPaymentStreak(): int
     {
         $loan = $this->loans()

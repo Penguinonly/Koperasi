@@ -14,7 +14,7 @@ flowchart LR
     Browser[Browser admin] -->|Polling tiap 5 detik| Web
 ```
 
-Halaman `/admin` mempertahankan UI daftar anggota berbentuk kartu: pencarian, filter status, jumlah anggota, dan grid kartu. Informasi pinjaman pada kartu diganti dengan saldo tabungan dan transaksi terakhir. Kartu menyediakan aksi Setor, Tarik, dan Detail. Detail membuka formulir transaksi beserta riwayat anggota. Setiap setoran/penarikan wajib memilih kategori Pokok, Wajib, atau Sukarela.
+Halaman `/admin` mempertahankan UI daftar anggota berbentuk kartu: pencarian, filter status, jumlah anggota, dan grid kartu. Informasi pinjaman pada kartu diganti dengan saldo tabungan dan transaksi terakhir. Kartu menyediakan aksi Setor, Tarik, dan Detail. Detail membuka formulir transaksi beserta riwayat anggota. Modal transaksi berukuran tetap mengikuti tinggi layar dan mengunci scroll halaman latar; hanya area tabel riwayat yang dapat digulir, dengan judul kolom tetap terlihat. Kartu saldo di modal selalu menunjukkan keseluruhan saldo; ketika dropdown memilih Pokok, Wajib, atau Sukarela, subtotal pilihan tampil dan kolom saldo riwayat menunjukkan subtotal berjalan kategori itu. Setiap setoran/penarikan wajib memilih kategori Pokok, Wajib, atau Sukarela. Setelah transaksi tersimpan, filter riwayat langsung berpindah ke kategori transaksi tersebut.
 
 ## 2. Autentikasi dan halaman
 
@@ -26,7 +26,12 @@ Halaman `/admin` mempertahankan UI daftar anggota berbentuk kartu: pencarian, fi
 | `GET /admin` | Admin | Daftar anggota dan saldo tabungan. Mendukung parameter `search`, `status`, dan `page`. |
 | `GET /admin/savings/snapshot` | Admin | Mengembalikan saldo dan transaksi terakhir untuk kartu yang sedang ditampilkan. Menerima `ids[]`. |
 | `GET /admin/savings/{customer}` | Admin | Saldo keseluruhan, total tiap kategori, dan riwayat sesuai filter query `category` (HISTORY, POKOK, WAJIB, SUKARELA); 20 transaksi per halaman. |
+| `GET /admin/savings/{customer}/export` | Admin | Mengunduh file Excel `.xlsx` berisi ringkasan anggota dan seluruh transaksi sesuai query `category` (HISTORY, POKOK, WAJIB, SUKARELA). |
+| `GET /admin/savings/{customer}/transactions/ids` | Admin | Mengambil ID seluruh transaksi aktif sesuai filter kategori untuk aksi Pilih semua. |
 | `POST /admin/savings/{customer}` | Admin | Mencatat setoran/penarikan dengan kategori `POKOK`, `WAJIB`, atau `SUKARELA`. Dilindungi session dan CSRF Laravel. |
+| `PUT /admin/savings/{customer}/transactions/{transactionId}` | Admin | Mengubah jenis, kategori, nominal, atau catatan transaksi dan menghitung ulang saldo ledger. |
+| `DELETE /admin/savings/{customer}/transactions/{transactionId}` | Admin | Soft delete satu transaksi anggota. |
+| `DELETE /admin/savings/{customer}/transactions` | Admin | Soft delete beberapa transaksi yang dipilih; body JSON berisi `ids`. |
 | `GET /api/health` | Publik | Health check API. Route API bisnis lama telah dinonaktifkan. |
 
 `/dashboard` hanya menjadi redirect kompatibilitas ke `/admin`. Route `/member/*`, `/workspace/*`, halaman pengelolaan karyawan, pinjaman, validasi, dan riwayat lama sudah tidak tersedia.
@@ -38,7 +43,11 @@ Halaman `/admin` mempertahankan UI daftar anggota berbentuk kartu: pencarian, fi
 3. Browser mengirim request JSON dengan token CSRF dan UUID idempotensi.
 4. `AdminSavingsController` memvalidasi jenis transaksi, nominal, dan UUID.
 5. `SavingsLedgerService` mengunci record anggota dalam transaksi database, membaca saldo keseluruhan dan saldo kategori, memeriksa aturan, lalu menulis ledger.
-6. UI menampilkan saldo baru dan memuat ulang riwayat anggota.
+6. UI menampilkan saldo baru dan memuat ulang riwayat anggota pada kategori transaksi yang baru disimpan.
+
+Tombol **Unduh Excel (.xlsx)** pada modal detail mengekspor seluruh transaksi anggota (bukan hanya halaman tabel yang sedang terlihat). Filter Riwayat/Pokok/Wajib/Sukarela ikut menentukan baris yang diekspor. Workbook menyertakan ringkasan saldo keseluruhan dan saldo setiap kategori, serta tanggal, nomor bukti, jenis transaksi/tabungan, nominal, saldo setelah transaksi, catatan, dan nama admin pencatat. Pada filter kategori, kolom saldo menunjukkan subtotal berjalan kategori tersebut; pada filter Riwayat, kolom saldo menunjukkan saldo keseluruhan. Lebar kolom, format angka/tanggal, judul, header, filter tabel, dan baris header yang dibekukan sudah disiapkan agar laporan langsung terbaca saat dibuka.
+
+Setiap baris riwayat memiliki aksi **Edit** dan **Hapus**. Tombol **Edit** dan semua kontrol penghapusan hanya muncul setelah admin menyalakan **Mode edit**; ketika mode mati, toolbar hanya menampilkan tombol Mode edit. Keluar dari mode tersebut membatalkan perubahan yang belum disimpan. Checkbox di header memilih semua baris pada halaman aktif. Tombol **Pilih semua** memilih semua transaksi aktif yang sesuai filter saat ini, termasuk halaman lain; pilihan dikosongkan saat filter berubah. Tombol **Hapus** menghapus transaksi terpilih dan meminta konfirmasi. Penghapusan adalah soft delete: baris keluar dari saldo, riwayat, dan ekspor, tetapi nilai `deleted_at` serta `deleted_by` disimpan untuk audit. Transaksi yang diedit atau dihapus menyebabkan saldo sesudah transaksi dihitung ulang berdasarkan urutan ID ledger. Perubahan dibatalkan jika membuat saldo keseluruhan atau kategori menjadi negatif.
 
 Aturan ledger:
 
@@ -62,12 +71,12 @@ Browser meminta snapshot saldo untuk anggota pada halaman setiap lima detik. End
 |---|---|
 | `customers` | Profil anggota, kode, status, pekerjaan, dan alamat. Data ini tetap menjadi sumber daftar anggota. |
 | `users`, `roles` | Akun pencatat dan role; akun admin login ke aplikasi. Akun lama tetap tersimpan untuk menjaga relasi histori. |
-| `savings_transactions` | Ledger setoran/penarikan, kategori tabungan (nullable untuk transaksi lama), nominal, saldo keseluruhan setelah transaksi, UUID idempotensi, kode referensi, admin pencatat, catatan, dan waktu. |
+| `savings_transactions` | Ledger setoran/penarikan, kategori tabungan (nullable untuk transaksi lama), nominal, saldo keseluruhan setelah transaksi, UUID idempotensi, kode referensi, admin pencatat/pengubah/penghapus, catatan, waktu, dan status soft delete. |
 | `loans`, `payments`, tabel domain lain | Data historis yang tetap disimpan, tetapi route operasional terkait tidak aktif pada aplikasi saat ini. |
 
 Relasi `savings_transactions.customer_id` mengarah ke anggota; `recorded_by` mengarah ke akun pencatat. Foreign key membatasi penghapusan anggota atau akun yang sudah punya transaksi tabungan.
 
-Migration adalah sumber kebenaran skema Laravel. Ledger dibuat oleh `database/migrations/2026_10_21_000001_create_savings_transactions_table.php`; kategori ditambahkan secara aman oleh `database/migrations/2026_10_21_000002_add_category_to_savings_transactions.php` tanpa mengubah transaksi lama.
+Migration adalah sumber kebenaran skema Laravel. Ledger dibuat oleh `database/migrations/2026_10_21_000001_create_savings_transactions_table.php`; kategori ditambahkan secara aman oleh `database/migrations/2026_10_21_000002_add_category_to_savings_transactions.php` tanpa mengubah transaksi lama. Jejak pengeditan dan soft delete ditambahkan oleh `database/migrations/2026_10_21_000003_add_audit_and_soft_deletes_to_savings_transactions.php`.
 
 ## 6. Akses akun dan data anggota
 
@@ -109,8 +118,9 @@ Gunakan `database/data/members.example.csv` untuk melihat format kolom. Periksa 
 | `routes/web.php` | Halaman login, logout, dashboard admin, dan endpoint savings. |
 | `routes/api.php` | Health check API. |
 | `app/Http/Controllers/DashboardController.php` | Pencarian/filter anggota dan snapshot saldo. |
-| `app/Http/Controllers/AdminSavingsController.php` | Riwayat transaksi dan endpoint pencatatan. |
-| `app/Services/SavingsLedgerService.php` | Aturan saldo, lock database, idempotensi, dan penulisan ledger. |
+| `app/Http/Controllers/AdminSavingsController.php` | Riwayat, ekspor Excel, edit, hapus, dan pencatatan transaksi. |
+| `app/Support/XlsxWorkbookWriter.php` | Menulis workbook `.xlsx` dengan kompresi bertahap tanpa ekstensi ZIP PHP. |
+| `app/Services/SavingsLedgerService.php` | Aturan saldo, lock database, idempotensi, penulisan ledger, dan perhitungan ulang saldo. |
 | `app/Models/Customer.php`, `SavingsTransaction.php` | Model anggota dan transaksi tabungan. |
 | `resources/views/dashboard.blade.php` | Halaman kartu anggota, form, riwayat, dan polling browser. |
 | `resources/views/login.blade.php` | Halaman login admin. |

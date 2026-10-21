@@ -85,9 +85,9 @@
             <p class="mt-4 text-center text-xs text-[#777]">Saldo dan transaksi diperbarui otomatis setiap 5 detik.</p>
         </main>
 
-        <div id="savings-modal" class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto bg-black/45 p-4" role="dialog" aria-modal="true" aria-labelledby="modal-member-name">
-            <section class="my-8 w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
-                <header class="flex items-start justify-between gap-4 border-b border-[#e1e5e7] p-5 sm:p-6">
+        <div id="savings-modal" class="fixed inset-0 z-50 hidden items-center justify-center overflow-hidden bg-black/45 p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="modal-member-name">
+            <section class="flex h-[calc(100vh-1.5rem)] max-h-[calc(100vh-1.5rem)] w-full max-w-[96vw] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-2rem)] xl:max-w-[1600px]">
+                <header class="flex shrink-0 items-start justify-between gap-4 border-b border-[#e1e5e7] p-5 sm:p-6">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wide text-[#66757d]">Transaksi tabungan</p>
                         <h2 id="modal-member-name" class="mt-1 text-xl font-semibold text-[#063c55]">Anggota</h2>
@@ -95,13 +95,17 @@
                     </div>
                     <button type="button" data-close-modal class="rounded-full px-3 py-1 text-2xl leading-none text-[#66757d] hover:bg-[#f2f5f6]" aria-label="Tutup">×</button>
                 </header>
-                <div class="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                    <div>
+                <div class="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-4 overflow-hidden p-4 sm:gap-6 sm:p-6 md:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] md:grid-rows-1">
+                    <div class="min-h-0">
                         <div class="rounded-xl bg-[#eff7fa] p-4">
                             <p class="text-sm text-[#52636b]">Saldo saat ini</p>
                             <p id="modal-balance" class="mt-1 text-2xl font-bold text-[#063c55]">Rp 0,00</p>
                         </div>
                         <form id="savings-form" class="mt-5 space-y-4">
+                            <div id="edit-mode-banner" class="hidden items-center justify-between gap-3 rounded-lg bg-[#fff8df] px-3 py-2 text-sm text-[#704f00]">
+                                <span id="edit-mode-label">Mengubah transaksi</span>
+                                <button id="cancel-edit" type="button" class="shrink-0 font-semibold underline">Batal</button>
+                            </div>
                             <label class="block text-sm font-medium">Jenis transaksi
                                 <select id="transaction-type" name="type" class="mt-1 h-11 w-full rounded-lg border border-[#c8d2d7] bg-white px-3">
                                     <option value="DEPOSIT">Setoran</option>
@@ -126,12 +130,15 @@
                             <button id="submit-transaction" type="submit" class="w-full rounded-lg bg-[#063c55] px-4 py-3 font-semibold text-white transition hover:bg-[#07516f]">Simpan transaksi</button>
                         </form>
                     </div>
-                    <div>
-                        <div class="mb-3 flex items-center justify-between">
+                    <div class="flex min-h-0 min-w-0 flex-col overflow-hidden">
+                        <div class="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-2">
                             <h3 class="font-semibold text-[#173c4c]">Riwayat transaksi</h3>
-                            <span id="history-page-label" class="text-xs text-[#66757d]"></span>
+                            <div class="flex items-center gap-2">
+                                <a id="export-history" href="#" class="rounded-lg border border-[#063c55] px-3 py-1.5 text-sm font-medium text-[#063c55] hover:bg-[#eff7fa]">Unduh Excel (.xlsx)</a>
+                                <span id="history-page-label" class="text-xs text-[#66757d]"></span>
+                            </div>
                         </div>
-                        <div class="mb-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                        <div class="mb-3 grid shrink-0 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                             <label class="block text-sm font-medium text-[#52636b]">Tampilkan
                                 <select id="history-filter" class="mt-1 h-10 w-full rounded-lg border border-[#c8d2d7] bg-white px-3 text-sm text-[#171717]">
                                     <option value="HISTORY">Riwayat</option>
@@ -145,14 +152,22 @@
                                 <p id="category-total-value" class="mt-1 font-semibold text-[#063c55]">Rp 0,00</p>
                             </div>
                         </div>
-                        <p id="uncategorized-note" class="mb-3 hidden rounded-lg bg-[#fff8df] px-3 py-2 text-xs text-[#704f00]"></p>
-                        <div class="overflow-x-auto rounded-xl border border-[#e1e5e7]">
-                            <table class="w-full min-w-[420px] text-left text-sm">
-                                <thead class="bg-[#f4f7f8] text-xs uppercase tracking-wide text-[#66757d]"><tr><th class="px-3 py-2">Tanggal</th><th class="px-3 py-2">Transaksi</th><th class="px-3 py-2 text-right">Nominal</th><th class="px-3 py-2 text-right">Saldo</th></tr></thead>
+                        <p id="uncategorized-note" class="mb-3 hidden shrink-0 rounded-lg bg-[#fff8df] px-3 py-2 text-xs text-[#704f00]"></p>
+                        <div class="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-2">
+                            <span id="selection-count" data-edit-mode-only class="hidden text-xs text-[#66757d]">0 transaksi dipilih</span>
+                            <div class="flex flex-wrap gap-2">
+                                <button id="toggle-edit-mode" type="button" aria-pressed="false" class="rounded-lg border border-[#063c55] px-3 py-1.5 text-sm font-medium text-[#063c55] hover:bg-[#eff7fa]">Mode edit</button>
+                                <button id="select-all-transactions" data-edit-mode-only type="button" disabled class="hidden rounded-lg border border-[#063c55] px-3 py-1.5 text-sm font-medium text-[#063c55] disabled:opacity-40">Pilih semua</button>
+                                <button id="delete-selected" data-edit-mode-only type="button" disabled class="hidden rounded-lg bg-[#a0271d] px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40">Hapus</button>
+                            </div>
+                        </div>
+                        <div id="history-scroll-area" class="min-h-0 flex-1 overflow-auto rounded-xl border border-[#e1e5e7]">
+                            <table id="transaction-history-table" class="w-full min-w-[500px] text-left text-sm">
+                                <thead class="bg-[#f4f7f8] text-xs uppercase tracking-wide text-[#66757d]"><tr><th data-edit-mode-only class="sticky top-0 z-10 hidden bg-[#f4f7f8] px-3 py-2"><input id="select-visible-transactions" type="checkbox" aria-label="Pilih semua transaksi pada halaman ini" class="h-4 w-4 accent-[#063c55]"></th><th class="sticky top-0 z-10 bg-[#f4f7f8] px-3 py-2">Tanggal</th><th class="sticky top-0 z-10 bg-[#f4f7f8] px-3 py-2">Transaksi</th><th class="sticky top-0 z-10 bg-[#f4f7f8] px-3 py-2 text-right">Nominal</th><th id="history-balance-header" class="sticky top-0 z-10 bg-[#f4f7f8] px-3 py-2 text-right">Saldo keseluruhan</th><th data-edit-mode-only class="sticky top-0 z-10 hidden bg-[#f4f7f8] px-3 py-2 text-center">Aksi</th></tr></thead>
                                 <tbody id="transaction-rows"><tr><td colspan="4" class="px-3 py-5 text-center text-[#777]">Memuat riwayat…</td></tr></tbody>
                             </table>
                         </div>
-                        <div class="mt-3 flex justify-between">
+                        <div class="mt-3 flex shrink-0 justify-between">
                             <button id="history-previous" type="button" class="rounded border border-[#c8d2d7] px-3 py-1.5 text-sm text-[#063c55] disabled:opacity-40">Sebelumnya</button>
                             <button id="history-next" type="button" class="rounded border border-[#c8d2d7] px-3 py-1.5 text-sm text-[#063c55] disabled:opacity-40">Berikutnya</button>
                         </div>
@@ -173,14 +188,89 @@
                 let lastPage = 1;
                 let refreshing = false;
                 let pendingTransaction = null;
+                let editingTransactionId = null;
+                let editModeEnabled = false;
+                let filteredTransactionCount = 0;
+                let selectingAll = false;
+                const selectedTransactionIds = new Set();
+                const visibleTransactions = new Map();
 
                 const formatMoney = (value) => new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value || 0));
                 const categoryNames = { POKOK: 'Pokok', WAJIB: 'Wajib', SUKARELA: 'Sukarela' };
+                const exportLink = document.getElementById('export-history');
+                const updateExportLink = () => {
+                    if (!currentMemberId) return;
+                    const category = document.getElementById('history-filter').value;
+                    exportLink.href = `${apiBase}/${currentMemberId}/export?category=${encodeURIComponent(category)}`;
+                };
                 const uuid = () => window.crypto?.randomUUID ? window.crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
                     const r = Math.random() * 16 | 0;
                     return (c === 'x' ? r : (r & 3 | 8)).toString(16);
                 });
                 const memberCard = (id) => grid.querySelector(`[data-member-id="${id}"]`);
+
+                function updateSelectionControls() {
+                    const selectedCount = selectedTransactionIds.size;
+                    document.getElementById('selection-count').textContent = `${selectedCount} transaksi dipilih`;
+                    document.getElementById('delete-selected').disabled = selectedCount === 0;
+                    const selectAll = document.getElementById('select-all-transactions');
+                    const allSelected = filteredTransactionCount > 0 && selectedCount === filteredTransactionCount;
+                    selectAll.textContent = selectingAll ? 'Memilih…' : (allSelected ? 'Batalkan pilihan' : `Pilih semua (${filteredTransactionCount})`);
+                    selectAll.disabled = selectingAll || filteredTransactionCount === 0;
+
+                    const pageCheckbox = document.getElementById('select-visible-transactions');
+                    const checkboxes = [...document.querySelectorAll('#transaction-rows [data-row-select]')];
+                    checkboxes.forEach((checkbox) => { checkbox.checked = selectedTransactionIds.has(checkbox.value); });
+                    const selectedOnPage = checkboxes.filter((checkbox) => checkbox.checked).length;
+                    pageCheckbox.checked = checkboxes.length > 0 && selectedOnPage === checkboxes.length;
+                    pageCheckbox.indeterminate = selectedOnPage > 0 && selectedOnPage < checkboxes.length;
+                    pageCheckbox.disabled = checkboxes.length === 0;
+                }
+
+                function updateEditModeControls() {
+                    const toggle = document.getElementById('toggle-edit-mode');
+                    toggle.textContent = editModeEnabled ? 'Selesai edit' : 'Mode edit';
+                    toggle.setAttribute('aria-pressed', String(editModeEnabled));
+                    document.querySelectorAll('[data-edit-mode-only]').forEach((element) => {
+                        element.classList.toggle('hidden', !editModeEnabled);
+                    });
+                    const table = document.getElementById('transaction-history-table');
+                    table.classList.toggle('min-w-[700px]', editModeEnabled);
+                    table.classList.toggle('min-w-[500px]', !editModeEnabled);
+                    document.querySelectorAll('#transaction-rows [data-row-action="edit"]').forEach((button) => {
+                        button.disabled = !editModeEnabled;
+                        button.title = editModeEnabled ? 'Edit transaksi ini' : 'Aktifkan Mode edit terlebih dahulu';
+                        button.classList.toggle('cursor-not-allowed', !editModeEnabled);
+                        button.classList.toggle('opacity-40', !editModeEnabled);
+                    });
+                }
+
+                function resetEditForm(clearMessage = true) {
+                    editingTransactionId = null;
+                    document.getElementById('edit-mode-banner').classList.add('hidden');
+                    document.getElementById('edit-mode-banner').classList.remove('flex');
+                    document.getElementById('submit-transaction').textContent = 'Simpan transaksi';
+                    document.getElementById('transaction-type').value = 'DEPOSIT';
+                    document.getElementById('transaction-category').value = '';
+                    document.getElementById('transaction-amount').value = '';
+                    document.getElementById('transaction-note').value = '';
+                    if (clearMessage) document.getElementById('form-message').classList.add('hidden');
+                }
+
+                function beginEdit(transaction) {
+                    if (!editModeEnabled) return;
+                    editingTransactionId = transaction.id;
+                    document.getElementById('transaction-type').value = transaction.type;
+                    document.getElementById('transaction-category').value = transaction.category || '';
+                    document.getElementById('transaction-amount').value = transaction.amount;
+                    document.getElementById('transaction-note').value = transaction.note || '';
+                    document.getElementById('edit-mode-label').textContent = `Mengubah ${transaction.reference_code}`;
+                    document.getElementById('edit-mode-banner').classList.remove('hidden');
+                    document.getElementById('edit-mode-banner').classList.add('flex');
+                    document.getElementById('submit-transaction').textContent = 'Simpan perubahan';
+                    document.getElementById('form-message').classList.add('hidden');
+                    document.getElementById('transaction-amount').focus();
+                }
 
                 function updateCard(member) {
                     const card = memberCard(member.id);
@@ -228,7 +318,8 @@
                     currentPage = page;
                     const rows = document.getElementById('transaction-rows');
                     const categoryFilter = document.getElementById('history-filter').value;
-                    if (showLoading) rows.innerHTML = '<tr><td colspan="4" class="px-3 py-5 text-center text-[#777]">Memuat riwayat…</td></tr>';
+                    updateExportLink();
+                    if (showLoading) rows.innerHTML = `<tr><td colspan="${editModeEnabled ? 6 : 4}" class="px-3 py-5 text-center text-[#777]">Memuat riwayat…</td></tr>`;
                     try {
                         const response = await fetch(`${apiBase}/${currentMemberId}?page=${page}&category=${categoryFilter}`, { headers: { Accept: 'application/json' } });
                         const payload = await response.json();
@@ -241,69 +332,152 @@
                             ? 'Saldo keseluruhan'
                             : `Total tabungan ${categoryNames[categoryFilter]}`;
                         document.getElementById('category-total-value').textContent = `Rp ${formatMoney(categoryFilter === 'HISTORY' ? payload.balance : payload.category_totals[categoryFilter])}`;
+                        document.getElementById('history-balance-header').textContent = categoryFilter === 'HISTORY'
+                            ? 'Saldo keseluruhan'
+                            : `Saldo ${categoryNames[categoryFilter]}`;
                         const unclassifiedNote = document.getElementById('uncategorized-note');
                         unclassifiedNote.textContent = payload.uncategorized_transactions > 0
                             ? `${payload.uncategorized_transactions} transaksi lama belum memiliki kategori. Transaksi tersebut tetap masuk saldo keseluruhan dan Riwayat.`
                             : '';
                         unclassifiedNote.classList.toggle('hidden', payload.uncategorized_transactions === 0);
+                        filteredTransactionCount = payload.filtered_transaction_count;
+                        visibleTransactions.clear();
                         const items = payload.transactions.data;
                         rows.replaceChildren();
                         if (items.length === 0) {
                             const empty = document.createElement('tr');
                             const cell = document.createElement('td');
-                            cell.colSpan = 5;
+                            cell.colSpan = editModeEnabled ? 6 : 4;
                             cell.className = 'px-3 py-5 text-center text-[#777]';
                             cell.textContent = 'Belum ada transaksi.';
                             empty.append(cell);
                             rows.append(empty);
                         } else {
                             items.forEach((transaction) => {
+                                visibleTransactions.set(String(transaction.id), transaction);
                                 const row = document.createElement('tr');
                                 row.className = 'border-t border-[#e8edef]';
                                 const date = new Date(transaction.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
                                 const transactionType = transaction.type === 'DEPOSIT' ? 'Setoran' : 'Penarikan';
                                 const categoryName = categoryNames[transaction.category] || 'Belum dikategorikan';
-                                [date, `${transactionType} · ${categoryName}`, `Rp ${formatMoney(transaction.amount)}`, `Rp ${formatMoney(transaction.balance_after)}`].forEach((value, index) => {
+                                const displayedBalance = categoryFilter === 'HISTORY' ? transaction.balance_after : transaction.category_balance_after;
+                                const selectCell = document.createElement('td');
+                                selectCell.dataset.editModeOnly = 'true';
+                                selectCell.className = editModeEnabled ? 'px-3 py-2' : 'hidden';
+                                const checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox';
+                                checkbox.value = String(transaction.id);
+                                checkbox.dataset.rowSelect = 'true';
+                                checkbox.setAttribute('aria-label', `Pilih transaksi ${transaction.reference_code}`);
+                                checkbox.className = 'h-4 w-4 accent-[#063c55]';
+                                checkbox.checked = selectedTransactionIds.has(String(transaction.id));
+                                selectCell.append(checkbox);
+                                row.append(selectCell);
+                                [date, `${transactionType} · ${categoryName}`, `Rp ${formatMoney(transaction.amount)}`, `Rp ${formatMoney(displayedBalance)}`].forEach((value, index) => {
                                     const cell = document.createElement('td');
                                     cell.className = `px-3 py-2 ${index > 1 ? 'text-right' : ''}`;
                                     cell.textContent = value;
                                     row.append(cell);
                                 });
+                                const actionCell = document.createElement('td');
+                                actionCell.dataset.editModeOnly = 'true';
+                                actionCell.className = editModeEnabled ? 'whitespace-nowrap px-3 py-2 text-center' : 'hidden';
+                                const editButton = document.createElement('button');
+                                editButton.type = 'button';
+                                editButton.dataset.rowAction = 'edit';
+                                editButton.dataset.transactionId = String(transaction.id);
+                                editButton.className = 'mr-2 rounded border border-[#063c55] px-2 py-1 text-xs font-medium text-[#063c55] hover:bg-[#eff7fa]';
+                                editButton.textContent = 'Edit';
+                                editButton.disabled = !editModeEnabled;
+                                editButton.title = editModeEnabled ? 'Edit transaksi ini' : 'Aktifkan Mode edit terlebih dahulu';
+                                editButton.classList.toggle('cursor-not-allowed', !editModeEnabled);
+                                editButton.classList.toggle('opacity-40', !editModeEnabled);
+                                const deleteButton = document.createElement('button');
+                                deleteButton.type = 'button';
+                                deleteButton.dataset.rowAction = 'delete';
+                                deleteButton.dataset.transactionId = String(transaction.id);
+                                deleteButton.className = 'rounded border border-[#a0271d] px-2 py-1 text-xs font-medium text-[#a0271d] hover:bg-[#fff2f0]';
+                                deleteButton.textContent = 'Hapus';
+                                actionCell.append(editButton, deleteButton);
+                                row.append(actionCell);
                                 row.title = `${transaction.reference_code} · ${transaction.recorded_by?.name || 'Admin'}${transaction.note ? ` · ${transaction.note}` : ''}`;
                                 rows.append(row);
                             });
                         }
+                        updateSelectionControls();
+                        updateEditModeControls();
                         currentPage = payload.transactions.current_page;
                         lastPage = payload.transactions.last_page;
                         document.getElementById('history-page-label').textContent = `${currentPage} / ${lastPage}`;
                         document.getElementById('history-previous').disabled = currentPage <= 1;
                         document.getElementById('history-next').disabled = currentPage >= lastPage;
+                        if (showLoading) document.getElementById('history-scroll-area').scrollTop = 0;
                     } catch (error) {
                         rows.replaceChildren();
                         const row = document.createElement('tr');
                         const cell = document.createElement('td');
-                        cell.colSpan = 5;
+                        cell.colSpan = editModeEnabled ? 6 : 4;
                         cell.className = 'px-3 py-5 text-center text-red-700';
                         cell.textContent = error.message;
                         row.append(cell);
                         rows.append(row);
+                        updateSelectionControls();
+                        updateEditModeControls();
+                    }
+                }
+
+                async function deleteTransactions(path, body, confirmation) {
+                    if (!window.confirm(confirmation)) return;
+                    try {
+                        const response = await fetch(`${apiBase}/${currentMemberId}${path}`, {
+                            method: 'DELETE',
+                            headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                            ...(body ? { body: JSON.stringify(body) } : {}),
+                        });
+                        const payload = await response.json();
+                        if (!response.ok) {
+                            const validation = payload.errors ? Object.values(payload.errors).flat().join(' ') : payload.message;
+                            throw new Error(validation || 'Transaksi gagal dihapus.');
+                        }
+
+                        selectedTransactionIds.clear();
+                        resetEditForm();
+                        const message = document.getElementById('form-message');
+                        message.textContent = `${payload.deleted_count} transaksi berhasil dihapus.`;
+                        message.className = 'rounded-lg bg-[#e9f6ed] px-3 py-2 text-sm text-[#17633a]';
+                        await loadMember(1, false);
+                        document.getElementById('history-scroll-area').scrollTop = 0;
+                        await refreshSnapshot();
+                        updateSelectionControls();
+                    } catch (error) {
+                        const message = document.getElementById('form-message');
+                        message.textContent = error.message;
+                        message.className = 'rounded-lg bg-[#fff2f0] px-3 py-2 text-sm text-[#a0271d]';
                     }
                 }
 
                 function openModal(card, type = 'DEPOSIT') {
                     currentMemberId = card.dataset.memberId;
                     currentPage = 1;
+                    selectedTransactionIds.clear();
+                    filteredTransactionCount = 0;
+                    editModeEnabled = false;
+                    resetEditForm();
+                    updateSelectionControls();
+                    updateEditModeControls();
                     document.getElementById('modal-member-name').textContent = card.querySelector('h2').textContent;
                     document.getElementById('modal-member-code').textContent = `Anggota ${card.dataset.memberCode} · ${card.dataset.memberStatus}`;
                     document.getElementById('modal-balance').textContent = card.querySelector('.member-balance').textContent;
                     document.getElementById('transaction-type').value = type;
                     document.getElementById('transaction-category').value = '';
                     document.getElementById('history-filter').value = 'HISTORY';
+                    updateExportLink();
                     document.getElementById('transaction-amount').value = '';
                     document.getElementById('transaction-note').value = '';
                     document.getElementById('form-message').classList.add('hidden');
                     modal.classList.remove('hidden');
                     modal.classList.add('flex');
+                    document.body.classList.add('overflow-hidden');
                     loadMember();
                     document.getElementById('transaction-amount').focus();
                 }
@@ -311,7 +485,11 @@
                 function closeModal() {
                     modal.classList.add('hidden');
                     modal.classList.remove('flex');
+                    document.body.classList.remove('overflow-hidden');
                     currentMemberId = null;
+                    selectedTransactionIds.clear();
+                    editModeEnabled = false;
+                    resetEditForm();
                 }
 
                 grid.addEventListener('click', (event) => {
@@ -327,7 +505,92 @@
                 document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && currentMemberId) closeModal(); });
                 document.getElementById('history-previous').addEventListener('click', () => loadMember(Math.max(1, currentPage - 1)));
                 document.getElementById('history-next').addEventListener('click', () => loadMember(Math.min(lastPage, currentPage + 1)));
-                document.getElementById('history-filter').addEventListener('change', () => loadMember(1));
+                document.getElementById('history-filter').addEventListener('change', () => {
+                    selectedTransactionIds.clear();
+                    updateSelectionControls();
+                    loadMember(1);
+                });
+                document.getElementById('cancel-edit').addEventListener('click', () => resetEditForm());
+                document.getElementById('toggle-edit-mode').addEventListener('click', () => {
+                    if (editModeEnabled && editingTransactionId !== null
+                        && !window.confirm('Keluar dari Mode edit dan batalkan perubahan yang belum disimpan?')) return;
+
+                    editModeEnabled = !editModeEnabled;
+                    if (!editModeEnabled) {
+                        resetEditForm();
+                        selectedTransactionIds.clear();
+                        updateSelectionControls();
+                    }
+                    updateEditModeControls();
+                });
+                document.getElementById('select-visible-transactions').addEventListener('change', (event) => {
+                    document.querySelectorAll('#transaction-rows [data-row-select]').forEach((checkbox) => {
+                        checkbox.checked = event.target.checked;
+                        if (event.target.checked) selectedTransactionIds.add(checkbox.value);
+                        else selectedTransactionIds.delete(checkbox.value);
+                    });
+                    updateSelectionControls();
+                });
+                document.getElementById('transaction-rows').addEventListener('change', (event) => {
+                    const checkbox = event.target.closest('[data-row-select]');
+                    if (!checkbox) return;
+                    if (checkbox.checked) selectedTransactionIds.add(checkbox.value);
+                    else selectedTransactionIds.delete(checkbox.value);
+                    updateSelectionControls();
+                });
+                document.getElementById('transaction-rows').addEventListener('click', (event) => {
+                    const button = event.target.closest('[data-row-action]');
+                    if (!button) return;
+                    const transactionId = button.dataset.transactionId;
+                    const transaction = visibleTransactions.get(transactionId);
+                    if (!transaction) return;
+                    if (button.dataset.rowAction === 'edit') {
+                        beginEdit(transaction);
+                        return;
+                    }
+                    const type = transaction.type === 'DEPOSIT' ? 'Setoran' : 'Penarikan';
+                    const category = categoryNames[transaction.category] || 'Belum dikategorikan';
+                    deleteTransactions(
+                        `/transactions/${transactionId}`,
+                        null,
+                        `Hapus transaksi ${transaction.reference_code} (${type} ${category}, Rp ${formatMoney(transaction.amount)})? Transaksi akan dikeluarkan dari saldo aktif.`,
+                    );
+                });
+                document.getElementById('delete-selected').addEventListener('click', () => {
+                    const ids = [...selectedTransactionIds];
+                    deleteTransactions(
+                        '/transactions',
+                        { ids },
+                        `Hapus ${ids.length} transaksi yang dipilih? Transaksi akan dikeluarkan dari saldo aktif.`,
+                    );
+                });
+                document.getElementById('select-all-transactions').addEventListener('click', async () => {
+                    if (filteredTransactionCount > 0 && selectedTransactionIds.size === filteredTransactionCount) {
+                        selectedTransactionIds.clear();
+                        updateSelectionControls();
+                        return;
+                    }
+
+                    selectingAll = true;
+                    updateSelectionControls();
+                    try {
+                        const category = document.getElementById('history-filter').value;
+                        const response = await fetch(`${apiBase}/${currentMemberId}/transactions/ids?category=${encodeURIComponent(category)}`, {
+                            headers: { Accept: 'application/json' },
+                        });
+                        const payload = await response.json();
+                        if (!response.ok) throw new Error(payload.message || 'Daftar transaksi gagal dipilih.');
+                        selectedTransactionIds.clear();
+                        payload.ids.forEach((id) => selectedTransactionIds.add(String(id)));
+                    } catch (error) {
+                        const message = document.getElementById('form-message');
+                        message.textContent = error.message;
+                        message.className = 'rounded-lg bg-[#fff2f0] px-3 py-2 text-sm text-[#a0271d]';
+                    } finally {
+                        selectingAll = false;
+                        updateSelectionControls();
+                    }
+                });
 
                 form.addEventListener('submit', async (event) => {
                     event.preventDefault();
@@ -337,31 +600,40 @@
                     submit.textContent = 'Menyimpan…';
                     message.classList.add('hidden');
                     try {
+                        const editingId = editingTransactionId;
                         const transactionData = {
                             type: document.getElementById('transaction-type').value,
                             category: document.getElementById('transaction-category').value,
                             amount: document.getElementById('transaction-amount').value,
                             note: document.getElementById('transaction-note').value,
                         };
-                        const requestFingerprint = JSON.stringify([currentMemberId, transactionData.type, transactionData.category, transactionData.amount, transactionData.note]);
-                        if (!pendingTransaction || pendingTransaction.fingerprint !== requestFingerprint) {
-                            pendingTransaction = { fingerprint: requestFingerprint, key: uuid() };
+                        if (editingId === null) {
+                            const requestFingerprint = JSON.stringify([currentMemberId, transactionData.type, transactionData.category, transactionData.amount, transactionData.note]);
+                            if (!pendingTransaction || pendingTransaction.fingerprint !== requestFingerprint) {
+                                pendingTransaction = { fingerprint: requestFingerprint, key: uuid() };
+                            }
                         }
-                        const response = await fetch(`${apiBase}/${currentMemberId}`, {
-                            method: 'POST',
+                        const response = await fetch(editingId === null ? `${apiBase}/${currentMemberId}` : `${apiBase}/${currentMemberId}/transactions/${editingId}`, {
+                            method: editingId === null ? 'POST' : 'PUT',
                             headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-                            body: JSON.stringify({ ...transactionData, idempotency_key: pendingTransaction.key }),
+                            body: JSON.stringify(editingId === null ? { ...transactionData, idempotency_key: pendingTransaction.key } : transactionData),
                         });
                         const payload = await response.json();
                         if (!response.ok) {
                             const validation = payload.errors ? Object.values(payload.errors).flat().join(' ') : payload.message;
                             throw new Error(validation || 'Transaksi gagal disimpan.');
                         }
-                        message.textContent = `Transaksi tersimpan. Saldo terbaru Rp ${formatMoney(payload.balance)}.`;
+                        message.textContent = editingId === null
+                            ? `Transaksi tersimpan. Saldo terbaru Rp ${formatMoney(payload.balance)}.`
+                            : `Perubahan transaksi tersimpan. Saldo terbaru Rp ${formatMoney(payload.balance)}.`;
                         message.className = 'rounded-lg bg-[#e9f6ed] px-3 py-2 text-sm text-[#17633a]';
                         pendingTransaction = null;
+                        selectedTransactionIds.clear();
                         document.getElementById('modal-balance').textContent = `Rp ${formatMoney(payload.balance)}`;
+                        document.getElementById('history-filter').value = transactionData.category;
+                        if (editingId !== null) resetEditForm(false);
                         await loadMember(1, false);
+                        document.getElementById('history-scroll-area').scrollTop = 0;
                         await refreshSnapshot();
                         document.getElementById('transaction-amount').value = '';
                         document.getElementById('transaction-category').value = '';
@@ -371,7 +643,7 @@
                         message.className = 'rounded-lg bg-[#fff2f0] px-3 py-2 text-sm text-[#a0271d]';
                     } finally {
                         submit.disabled = false;
-                        submit.textContent = 'Simpan transaksi';
+                        submit.textContent = editingTransactionId === null ? 'Simpan transaksi' : 'Simpan perubahan';
                     }
                 });
 

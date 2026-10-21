@@ -524,6 +524,9 @@ CREATE TABLE savings_transactions (
     idempotency_key UUID NOT NULL UNIQUE,
     reference_code VARCHAR(40) NOT NULL UNIQUE,
     note TEXT NULL,
+    updated_by BIGINT NULL REFERENCES users(id) ON DELETE SET NULL,
+    deleted_by BIGINT NULL REFERENCES users(id) ON DELETE SET NULL,
+    deleted_at TIMESTAMP NULL,
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL
 );
@@ -532,3 +535,5 @@ CREATE TABLE savings_transactions (
 The transaction rows are the source of truth for savings balances. The current balance is the `balance_after` value on the latest transaction; members without ledger rows display zero. For the exact database-specific migration, use the Laravel migration rather than this SQL illustration.
 
 Migration `2026_10_21_000002_add_category_to_savings_transactions.php` adds nullable `category` to existing installations. New web transactions require a category. Existing rows stay `NULL` so the application does not invent a category; they remain included in overall `balance_after` and the unfiltered history, but not category totals.
+
+Migration `2026_10_21_000003_add_audit_and_soft_deletes_to_savings_transactions.php` adds `updated_by`, `deleted_by`, and `deleted_at`. Deleted transactions are hidden from active history, exports, and balances while the row remains available for audit. Edits and deletions rebuild later `balance_after` values in ID order and are rejected if any resulting overall or category balance is negative.

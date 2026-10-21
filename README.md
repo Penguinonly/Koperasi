@@ -9,6 +9,8 @@ Aplikasi web Laravel untuk mengelola setoran dan penarikan tabungan anggota mela
 - Saldo keseluruhan tetap ditampilkan; dropdown Riwayat/Pokok/Wajib/Sukarela menampilkan riwayat dan total kategori yang dipilih.
 - Saldo dan transaksi terakhir diperbarui otomatis setiap lima detik.
 - Riwayat transaksi dapat dibuka per anggota dan difilter menurut kategori.
+- Dalam Mode edit, admin dapat mengubah transaksi, memilih semua transaksi sesuai filter, serta menghapus satu atau beberapa transaksi terpilih.
+- Riwayat lengkap atau kategori yang sedang dipilih dapat diunduh per anggota sebagai file Excel `.xlsx`; kolom saldo menjadi saldo berjalan kategori yang dipilih.
 - Impor dan data profil anggota tetap tersedia. Halaman karyawan dan portal anggota sudah dihapus.
 
 Halaman web operasional: `/admin`. Login tersedia di `/login`. Hanya akun ber-role `admin` atau `master_admin` yang dapat masuk. Seeder standar membuat `admin@koperasi.id` dengan password awal `password`; ganti password itu sebelum dipakai bersama.
@@ -43,6 +45,7 @@ Import anggota tidak membuat akun login anggota. Anggota tanpa transaksi tabunga
 - Setoran hanya bisa dicatat untuk anggota berstatus aktif.
 - Penarikan ditolak jika melebihi saldo keseluruhan atau saldo kategori yang dipilih.
 - Setiap transaksi menyimpan nominal, saldo setelah transaksi, referensi, admin pencatat, waktu, dan catatan opsional.
+- Edit dan hapus memperbarui saldo keseluruhan serta subtotal kategori. Hapus memakai soft delete agar perubahan tetap memiliki jejak audit; perubahan ditolak jika membuat saldo transaksi berikutnya menjadi negatif.
 - Transaksi lama yang belum memiliki kategori tetap terlihat di Riwayat dan saldo keseluruhan; tidak dihitung ke saldo Pokok, Wajib, atau Sukarela.
 - Akun karyawan/anggota lama dan relasi datanya tidak dihapus dari database, tetapi tidak dapat login atau mengakses halaman melalui aplikasi ini. Ini mempertahankan histori dan relasi audit.
 - Halaman mengambil saldo terbaru dengan polling HTTP lima detik; belum memakai WebSocket.

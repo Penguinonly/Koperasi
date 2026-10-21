@@ -10,7 +10,9 @@ Aplikasi Laravel di root repository saat ini memiliki satu area operasional: adm
 - Halaman `/admin` memakai UI kartu anggota yang telah ada, dengan pencarian nama/kode anggota dan filter status.
 - Kartu menampilkan saldo tabungan serta transaksi terakhir.
 - Admin dapat mencatat setoran dan penarikan untuk tabungan Pokok, Wajib, dan Sukarela.
-- Modal mempertahankan saldo keseluruhan dan menyediakan dropdown Riwayat/Pokok/Wajib/Sukarela dengan total saldo kategori serta riwayat tersaring.
+- Mode edit menampilkan kontrol untuk mengubah transaksi, memilih semua transaksi sesuai filter, dan menghapus transaksi satu atau banyak sekaligus. Hapus menggunakan soft delete dan perubahan saldo dihitung ulang.
+- Modal mempertahankan saldo keseluruhan dan menyediakan dropdown Riwayat/Pokok/Wajib/Sukarela dengan total saldo kategori serta riwayat tersaring; kolom saldo baris mengikuti saldo berjalan kategori saat kategori dipilih.
+- Riwayat tiap anggota dapat diunduh sebagai Excel `.xlsx` mengikuti filter dropdown; kolom saldo menunjukkan saldo berjalan kategori yang dipilih, atau saldo keseluruhan pada Riwayat.
 - Saldo diperbarui otomatis setiap lima detik melalui endpoint snapshot.
 - Data profil anggota dan importer CSV tetap dipakai.
 - Route web selain login, logout, redirect dashboard lama, dan halaman admin telah dihapus. REST API Laravel hanya menyediakan health check.
@@ -19,7 +21,7 @@ Aplikasi Laravel di root repository saat ini memiliki satu area operasional: adm
 
 Ledger disimpan di `savings_transactions`. Saldo keseluruhan adalah `balance_after` pada transaksi terakhir; bila belum ada transaksi, UI menampilkan nol. Setoran mensyaratkan anggota aktif. Penarikan tidak boleh melebihi saldo keseluruhan maupun saldo kategori yang dipilih. Saldo Pokok/Wajib/Sukarela dihitung dari setoran dikurangi penarikan pada kategori tersebut. Pencatatan memakai transaksi database, penguncian baris anggota, dan kunci idempotensi.
 
-Migration tabungan: `database/migrations/2026_10_21_000001_create_savings_transactions_table.php` dan `database/migrations/2026_10_21_000002_add_category_to_savings_transactions.php`. Baris lama dibiarkan tanpa kategori agar tidak salah diklasifikasikan; jumlahnya tetap masuk saldo keseluruhan dan tampak di filter Riwayat.
+Migration tabungan: `database/migrations/2026_10_21_000001_create_savings_transactions_table.php`, `database/migrations/2026_10_21_000002_add_category_to_savings_transactions.php`, dan `database/migrations/2026_10_21_000003_add_audit_and_soft_deletes_to_savings_transactions.php`. Baris lama dibiarkan tanpa kategori agar tidak salah diklasifikasikan; jumlahnya tetap masuk saldo keseluruhan dan tampak di filter Riwayat. Baris yang dihapus tidak tampil lagi tetapi disimpan untuk audit.
 
 ## Akses dan retensi data
 

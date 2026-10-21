@@ -1,0 +1,124 @@
+import { FormEvent, useState } from "react";
+import download1 from "./download-1.png";
+import pngwingCom21 from "./pngwing-com-2-1.png";
+
+export const LoginPage = () => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!username.trim() || !password) {
+      setStatusMessage("Please enter your username and password.");
+      return;
+    }
+
+    setStatusMessage("Login details submitted.");
+  };
+
+  return (
+    <main className="bg-[#e6f3ffbf] overflow-hidden w-full min-w-[1440px] min-h-[1024px] relative">
+      <section
+        className="absolute top-0 right-0 w-[1558px] h-[1024px]"
+        aria-label="Koperasi Harmoni login"
+      >
+        <div
+          className="absolute top-0 right-0 w-[768px] h-[1024px] bg-[#e6f3ff] rounded-[25px_0px_0px_25px] opacity-75"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute top-0 right-[736px] w-[785px] h-[1024px] bg-[#6d9a79] rounded-[25px_0px_0px_25px] border border-solid border-black"
+          aria-hidden="true"
+        />
+        <img
+          className="absolute top-0 left-[118px] w-[704px] h-[1024px] aspect-[0.8] object-cover"
+          alt="Modern city buildings viewed from below"
+          src={download1}
+        />
+        <form
+          className="absolute top-20 left-[902px] w-[606px] h-[878px] flex flex-col"
+          onSubmit={handleSubmit}
+          noValidate={true}
+        >
+          <h1 className="ml-[130px] w-[337px] h-[38.13px] text-[#1e1e1e] text-[46px] text-center tracking-[0] leading-[normal] whitespace-nowrap">
+            Login
+          </h1>
+          <div className="w-[602px] h-[92.85px] mt-[224.9px] flex flex-col gap-[0.3px]">
+            <label
+              className="ml-0.5 w-[119px] h-[29px] text-[#003049] text-xl tracking-[0] leading-[normal]"
+              htmlFor="username"
+            >
+              Username
+            </label>
+            <input
+              className="h-16 w-[600px] px-10 bg-[#ffffffa6] rounded-[20px] text-xl text-black tracking-[0] leading-[normal] placeholder:text-[#00000080]"
+              id="username"
+              name="username"
+              type="text"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder="Enter your Username here"
+              autoComplete="username"
+              required={true}
+              aria-describedby="login-status"
+            />
+          </div>
+          <div className="w-[602px] h-[92.89px] relative mt-[39.1px]">
+            <label
+              className="absolute top-0 left-0.5 w-[98px] text-[#003049] text-xl tracking-[0] leading-[normal]"
+              htmlFor="password"
+            >
+              Password
+            </label>
+            <input
+              className="absolute top-[29px] left-0 w-[600px] h-16 px-10 bg-[#ffffffa6] rounded-[20px] text-xl text-black tracking-[0] leading-[normal] placeholder:text-[#00000080]"
+              id="password"
+              name="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Enter your Password here"
+              autoComplete="current-password"
+              required={true}
+              aria-describedby="login-status"
+            />
+          </div>
+          <button
+            className="ml-[121px] w-[340px] h-[59px] mt-[39.1px] rounded-[7px] bg-[#003049] text-white text-[26px] text-center tracking-[0] leading-[normal] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#003049]"
+            type="submit"
+          >
+            Enter
+          </button>
+          <p className="ml-[159px] w-[282px] h-[26.4px] mt-[22.4px] text-transparent text-lg tracking-[0] leading-[normal]">
+            <span className="text-[#7c838a]">Any problem ?</span>
+            <span className="text-black">&nbsp;</span>
+            <a
+              className="text-[#003049] underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#003049]"
+              href="mailto:contact@koperasiharmoni.com"
+            >
+              contact centre
+            </a>
+          </p>
+          <p
+            className="sr-only"
+            id="login-status"
+            aria-live="polite"
+            role="status"
+          >
+            {statusMessage}
+          </p>
+          <p className="ml-[152px] w-[279px] h-[22.49px] mt-[221.1px] text-[#003049] text-[34px] text-center tracking-[0] leading-[normal] whitespace-nowrap">
+            Koperasi Harmoni
+          </p>
+        </form>
+      </section>
+      <img
+        className="absolute top-[273px] left-[93px] w-[492px] h-[477px] aspect-[1.03] object-cover"
+        alt="Koperasi Indonesia emblem"
+        src={pngwingCom21}
+      />
+    </main>
+  );
+};

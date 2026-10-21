@@ -1,0 +1,492 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  COLLECTOR
+  ADMIN
+  MASTER_ADMIN
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum CustomerStatus {
+  DRAFT
+  PENDING_SURVEY
+  PENDING_APPROVAL
+  ACTIVE
+  REJECTED
+  SUSPENDED
+  CLOSED
+}
+
+enum LoanApplicationStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum LoanStatus {
+  PROPOSED
+  ACTIVE
+  PAID_OFF
+  DEFAULTED
+  CANCELLED
+}
+
+enum ScheduleStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+  SKIPPED
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+}
+
+enum QrCoverageMode {
+  ONE_DAY
+  TWO_DAYS
+  ARREARS_ACCUMULATED
+  CUSTOM
+}
+
+enum QrStatus {
+  ACTIVE
+  SCANNED
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  REVERSED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ApprovalEntityType {
+  CUSTOMER
+  CUSTOMER_UPDATE
+  EMPLOYEE
+  LOAN_APPLICATION
+}
+
+enum ApprovalActionType {
+  CREATE
+  UPDATE
+  DELETE
+  ACTIVATE
+}
+
+enum LoanRiskColor {
+  BLUE
+  YELLOW
+  RED
+  DARK
+}
+
+enum AttendanceSlot {
+  MORNING_IN
+  NOON_OUT
+  AFTERNOON_IN
+  NIGHT_OUT
+  UNKNOWN
+}
+
+enum AttendanceStatus {
+  COMPLETE
+  PARTIAL
+  ABSENT
+}
+
+enum DeviceStatus {
+  ACTIVE
+  MAINTENANCE
+  DISABLED
+}
+
+model User {
+  id                   String              @id @default(cuid())
+  role                 UserRole
+  status               UserStatus          @default(ACTIVE)
+  name                 String
+  email                String?             @unique
+  phone                String?             @unique
+  passwordHash         String
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  employeeProfile      EmployeeProfile?
+  customerProfile      CustomerProfile?
+  reviewedApplications LoanApplication[]   @relation("ApplicationReviewer")
+  approvedLoans        Loan[]              @relation("LoanApprovedBy")
+  generatedQrs         PaymentQr[]         @relation("QrGeneratedBy")
+  collectedPayments    Payment[]           @relation("PaymentCollectedBy")
+  requestedApprovals   ApprovalRequest[]   @relation("ApprovalRequestedBy")
+  reviewedApprovals    ApprovalRequest[]   @relation("ApprovalReviewedBy")
+  sessions             AuthSession[]
+  auditLogs            AuditLog[]          @relation("AuditActor")
+
+  @@index([role, status])
+}
+
+model AuthSession {
+  id           String   @id @default(cuid())
+  userId       String
+  refreshToken String   @unique
+  deviceName   String?
+  platform     String
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, expiresAt])
+}
+
+model Branch {
+  id        String            @id @default(cuid())
+  name      String
+  address   String?
+  employees EmployeeProfile[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model EmployeeProfile {
+  id                     String                  @id @default(cuid())
+  userId                 String                  @unique
+  employeeCode           String                  @unique
+  branchId               String?
+  supervisorId           String?
+  position               String?
+  canCollect             Boolean                 @default(true)
+  active                 Boolean                 @default(true)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  user                   User                    @relation(fields: [userId], references: [id])
+  branch                 Branch?                 @relation(fields: [branchId], references: [id])
+  supervisor             EmployeeProfile?        @relation("EmployeeSupervisor", fields: [supervisorId], references: [id])
+  subordinates           EmployeeProfile[]       @relation("EmployeeSupervisor")
+  customers              CustomerProfile[]       @relation("CustomerCollector")
+  proposedApplications   LoanApplication[]       @relation("ApplicationProposer")
+  managedLoans           Loan[]                  @relation("LoanCollector")
+  fingerprintCredentials FingerprintCredential[]
+  attendanceLogs         AttendanceLog[]
+  attendanceRecords      AttendanceRecord[]
+
+  @@index([branchId, active])
+  @@index([supervisorId])
+}
+
+model CustomerProfile {
+  id             String                  @id @default(cuid())
+  userId         String                  @unique
+  collectorId    String
+  status         CustomerStatus          @default(PENDING_APPROVAL)
+  nationalId     String?
+  businessName   String
+  businessType   String?
+  businessAddress String
+  businessLat    Decimal?                @db.Decimal(10, 7)
+  businessLng    Decimal?                @db.Decimal(10, 7)
+  surveyedAt     DateTime?
+  activatedAt    DateTime?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  user           User                    @relation(fields: [userId], references: [id])
+  collector      EmployeeProfile         @relation("CustomerCollector", fields: [collectorId], references: [id])
+  applications   LoanApplication[]
+  loans          Loan[]
+  paymentQrs     PaymentQr[]
+  payments       Payment[]
+  snapshots      CustomerDailySnapshot[]
+
+  @@index([collectorId, status])
+  @@index([businessLat, businessLng])
+}
+
+model LoanApplication {
+  id                  String                @id @default(cuid())
+  customerId          String
+  proposedByEmployeeId String
+  reviewedByUserId    String?
+  requestedAmount     Decimal               @db.Decimal(14, 2)
+  recommendedAmount   Decimal?              @db.Decimal(14, 2)
+  dailyInstallment    Decimal?              @db.Decimal(14, 2)
+  repaymentAnalysis   String
+  status              LoanApplicationStatus @default(SUBMITTED)
+  reviewedAt          DateTime?
+  reviewNote          String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  customer            CustomerProfile       @relation(fields: [customerId], references: [id])
+  proposedByEmployee  EmployeeProfile       @relation("ApplicationProposer", fields: [proposedByEmployeeId], references: [id])
+  reviewedBy          User?                 @relation("ApplicationReviewer", fields: [reviewedByUserId], references: [id])
+  loan                Loan?
+
+  @@index([status, createdAt])
+  @@index([proposedByEmployeeId, status])
+}
+
+model Loan {
+  id                   String                  @id @default(cuid())
+  loanNo               String                  @unique
+  applicationId        String?                 @unique
+  customerId           String
+  collectorId          String
+  approvedByUserId     String
+  principalAmount      Decimal                 @db.Decimal(14, 2)
+  dailyInstallment     Decimal                 @db.Decimal(14, 2)
+  totalCollectible     Decimal                 @db.Decimal(14, 2)
+  outstandingAmount    Decimal                 @db.Decimal(14, 2)
+  termDays             Int                     @default(60)
+  disbursementDate     DateTime
+  startDate            DateTime
+  expectedEndDate      DateTime
+  status               LoanStatus              @default(ACTIVE)
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  application          LoanApplication?        @relation(fields: [applicationId], references: [id])
+  customer             CustomerProfile         @relation(fields: [customerId], references: [id])
+  collector            EmployeeProfile         @relation("LoanCollector", fields: [collectorId], references: [id])
+  approvedBy           User                    @relation("LoanApprovedBy", fields: [approvedByUserId], references: [id])
+  schedules            LoanSchedule[]
+  paymentQrs           PaymentQr[]
+  payments             Payment[]
+  snapshots            CustomerDailySnapshot[]
+
+  @@index([customerId, status])
+  @@index([collectorId, status])
+  @@index([startDate, expectedEndDate])
+}
+
+model LoanSchedule {
+  id              String              @id @default(cuid())
+  loanId          String
+  dayIndex        Int
+  dueDate         DateTime
+  dueAmount       Decimal             @db.Decimal(14, 2)
+  paidAmount      Decimal             @default(0) @db.Decimal(14, 2)
+  status          ScheduleStatus      @default(PENDING)
+  paidAt          DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  loan            Loan                @relation(fields: [loanId], references: [id])
+  qrSchedules     PaymentQrSchedule[]
+  allocations     PaymentAllocation[]
+
+  @@unique([loanId, dayIndex])
+  @@unique([loanId, dueDate])
+  @@index([dueDate, status])
+}
+
+model PaymentQr {
+  id              String              @id @default(cuid())
+  tokenHash       String              @unique
+  payloadVersion  Int                 @default(1)
+  generatedByUserId String
+  customerId      String
+  loanId          String
+  coverageMode    QrCoverageMode
+  expectedAmount  Decimal             @db.Decimal(14, 2)
+  status          QrStatus            @default(ACTIVE)
+  expiresAt       DateTime
+  generatedAt     DateTime            @default(now())
+  generatedBy     User                @relation("QrGeneratedBy", fields: [generatedByUserId], references: [id])
+  customer        CustomerProfile     @relation(fields: [customerId], references: [id])
+  loan            Loan                @relation(fields: [loanId], references: [id])
+  schedules       PaymentQrSchedule[]
+  payment         Payment?
+
+  @@index([generatedByUserId, generatedAt])
+  @@index([customerId, status])
+  @@index([loanId, status])
+}
+
+model PaymentQrSchedule {
+  qrId       String
+  scheduleId String
+  qr         PaymentQr    @relation(fields: [qrId], references: [id])
+  schedule   LoanSchedule @relation(fields: [scheduleId], references: [id])
+
+  @@id([qrId, scheduleId])
+  @@index([scheduleId])
+}
+
+model Payment {
+  id                String              @id @default(cuid())
+  qrId              String              @unique
+  customerId        String
+  loanId            String
+  collectedByUserId String
+  method            PaymentMethod
+  amount            Decimal             @db.Decimal(14, 2)
+  transferReference String?
+  status            PaymentStatus       @default(VERIFIED)
+  scannedAt         DateTime            @default(now())
+  verifiedAt        DateTime?
+  note              String?
+  qr                PaymentQr           @relation(fields: [qrId], references: [id])
+  customer          CustomerProfile     @relation(fields: [customerId], references: [id])
+  loan              Loan                @relation(fields: [loanId], references: [id])
+  collectedBy       User                @relation("PaymentCollectedBy", fields: [collectedByUserId], references: [id])
+  allocations       PaymentAllocation[]
+
+  @@index([customerId, scannedAt])
+  @@index([loanId, scannedAt])
+  @@index([collectedByUserId, scannedAt])
+}
+
+model PaymentAllocation {
+  id         String       @id @default(cuid())
+  paymentId  String
+  scheduleId String
+  amount     Decimal      @db.Decimal(14, 2)
+  createdAt  DateTime     @default(now())
+  payment    Payment      @relation(fields: [paymentId], references: [id])
+  schedule   LoanSchedule @relation(fields: [scheduleId], references: [id])
+
+  @@unique([paymentId, scheduleId])
+  @@index([scheduleId])
+}
+
+model CustomerDailySnapshot {
+  id              String        @id @default(cuid())
+  customerId      String
+  loanId          String
+  snapshotDate    DateTime
+  arrearsDays     Int           @default(0)
+  streakDays      Int           @default(0)
+  unpaidAmount    Decimal       @default(0) @db.Decimal(14, 2)
+  riskColor       LoanRiskColor @default(BLUE)
+  paidToday       Boolean       @default(false)
+  dueToday        Boolean       @default(false)
+  generatedAt     DateTime      @default(now())
+  customer        CustomerProfile @relation(fields: [customerId], references: [id])
+  loan            Loan          @relation(fields: [loanId], references: [id])
+
+  @@unique([loanId, snapshotDate])
+  @@index([customerId, snapshotDate])
+  @@index([riskColor, snapshotDate])
+}
+
+model ApprovalRequest {
+  id                String             @id @default(cuid())
+  entityType        ApprovalEntityType
+  entityId          String
+  actionType        ApprovalActionType
+  status            ApprovalStatus     @default(PENDING)
+  requestedByUserId String
+  reviewedByUserId  String?
+  payloadSnapshot   Json
+  note              String?
+  reviewedAt        DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  requestedBy       User               @relation("ApprovalRequestedBy", fields: [requestedByUserId], references: [id])
+  reviewedBy        User?              @relation("ApprovalReviewedBy", fields: [reviewedByUserId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([status, createdAt])
+}
+
+model IotDevice {
+  id                     String                  @id @default(cuid())
+  deviceCode             String                  @unique
+  name                   String
+  location               String?
+  status                 DeviceStatus            @default(ACTIVE)
+  lastSeenAt             DateTime?
+  apiKeyHash             String
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  fingerprintCredentials FingerprintCredential[]
+  attendanceLogs         AttendanceLog[]
+}
+
+model FingerprintCredential {
+  id                    String          @id @default(cuid())
+  employeeId            String
+  deviceId              String?
+  fingerprintTemplateId String
+  active                Boolean         @default(true)
+  enrolledAt            DateTime        @default(now())
+  employee              EmployeeProfile @relation(fields: [employeeId], references: [id])
+  device                IotDevice?      @relation(fields: [deviceId], references: [id])
+  attendanceLogs        AttendanceLog[]
+
+  @@unique([deviceId, fingerprintTemplateId])
+  @@index([employeeId, active])
+}
+
+model AttendanceLog {
+  id                      String                 @id @default(cuid())
+  deviceId                String
+  employeeId              String
+  fingerprintCredentialId String?
+  slot                    AttendanceSlot
+  occurredAt              DateTime
+  receivedAt              DateTime               @default(now())
+  rawPayload              Json
+  device                  IotDevice              @relation(fields: [deviceId], references: [id])
+  employee                EmployeeProfile        @relation(fields: [employeeId], references: [id])
+  fingerprintCredential   FingerprintCredential? @relation(fields: [fingerprintCredentialId], references: [id])
+
+  @@index([employeeId, occurredAt])
+  @@index([deviceId, occurredAt])
+  @@index([slot, occurredAt])
+}
+
+model AttendanceRecord {
+  id            String           @id @default(cuid())
+  employeeId    String
+  attendanceDate DateTime
+  morningInAt   DateTime?
+  noonOutAt     DateTime?
+  afternoonInAt DateTime?
+  nightOutAt    DateTime?
+  status        AttendanceStatus @default(ABSENT)
+  note          String?
+  updatedAt     DateTime         @updatedAt
+  employee      EmployeeProfile  @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, attendanceDate])
+  @@index([attendanceDate, status])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  actor     User?    @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([actorId, createdAt])
+}

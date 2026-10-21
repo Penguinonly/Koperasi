@@ -10,6 +10,7 @@ class SavingsTransaction extends Model
         'customer_id',
         'recorded_by',
         'type',
+        'category',
         'amount',
         'balance_after',
         'idempotency_key',

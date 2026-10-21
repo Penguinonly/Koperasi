@@ -5,9 +5,10 @@ Aplikasi web Laravel untuk mengelola setoran dan penarikan tabungan anggota mela
 ## Fitur aktif
 
 - Admin mencari anggota berdasarkan nama atau nomor anggota dan memfilter status keanggotaan.
-- Admin mencatat setoran atau penarikan untuk anggota.
-- Saldo dihitung dari ledger transaksi; saldo dan transaksi terakhir diperbarui otomatis setiap lima detik.
-- Riwayat transaksi dapat dibuka per anggota.
+- Admin mencatat setoran atau penarikan untuk tabungan Pokok, Wajib, atau Sukarela.
+- Saldo keseluruhan tetap ditampilkan; dropdown Riwayat/Pokok/Wajib/Sukarela menampilkan riwayat dan total kategori yang dipilih.
+- Saldo dan transaksi terakhir diperbarui otomatis setiap lima detik.
+- Riwayat transaksi dapat dibuka per anggota dan difilter menurut kategori.
 - Impor dan data profil anggota tetap tersedia. Halaman karyawan dan portal anggota sudah dihapus.
 
 Halaman web operasional: `/admin`. Login tersedia di `/login`. Hanya akun ber-role `admin` atau `master_admin` yang dapat masuk. Seeder standar membuat `admin@koperasi.id` dengan password awal `password`; ganti password itu sebelum dipakai bersama.
@@ -40,8 +41,9 @@ Import anggota tidak membuat akun login anggota. Anggota tanpa transaksi tabunga
 ## Catatan operasional
 
 - Setoran hanya bisa dicatat untuk anggota berstatus aktif.
-- Penarikan ditolak jika melebihi saldo yang tersedia.
+- Penarikan ditolak jika melebihi saldo keseluruhan atau saldo kategori yang dipilih.
 - Setiap transaksi menyimpan nominal, saldo setelah transaksi, referensi, admin pencatat, waktu, dan catatan opsional.
+- Transaksi lama yang belum memiliki kategori tetap terlihat di Riwayat dan saldo keseluruhan; tidak dihitung ke saldo Pokok, Wajib, atau Sukarela.
 - Akun karyawan/anggota lama dan relasi datanya tidak dihapus dari database, tetapi tidak dapat login atau mengakses halaman melalui aplikasi ini. Ini mempertahankan histori dan relasi audit.
 - Halaman mengambil saldo terbaru dengan polling HTTP lima detik; belum memakai WebSocket.
 

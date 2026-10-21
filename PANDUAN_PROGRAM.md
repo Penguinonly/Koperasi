@@ -14,7 +14,7 @@ flowchart LR
     Browser[Browser admin] -->|Polling tiap 5 detik| Web
 ```
 
-Halaman `/admin` mempertahankan UI daftar anggota berbentuk kartu: pencarian, filter status, jumlah anggota, dan grid kartu. Informasi pinjaman pada kartu diganti dengan saldo tabungan dan transaksi terakhir. Kartu menyediakan aksi Setor, Tarik, dan Detail. Detail membuka formulir transaksi beserta riwayat anggota.
+Halaman `/admin` mempertahankan UI daftar anggota berbentuk kartu: pencarian, filter status, jumlah anggota, dan grid kartu. Informasi pinjaman pada kartu diganti dengan saldo tabungan dan transaksi terakhir. Kartu menyediakan aksi Setor, Tarik, dan Detail. Detail membuka formulir transaksi beserta riwayat anggota. Setiap setoran/penarikan wajib memilih kategori Pokok, Wajib, atau Sukarela.
 
 ## 2. Autentikasi dan halaman
 
@@ -25,8 +25,8 @@ Halaman `/admin` mempertahankan UI daftar anggota berbentuk kartu: pencarian, fi
 | `POST /logout` | Session | Mengakhiri sesi admin. |
 | `GET /admin` | Admin | Daftar anggota dan saldo tabungan. Mendukung parameter `search`, `status`, dan `page`. |
 | `GET /admin/savings/snapshot` | Admin | Mengembalikan saldo dan transaksi terakhir untuk kartu yang sedang ditampilkan. Menerima `ids[]`. |
-| `GET /admin/savings/{customer}` | Admin | Saldo serta riwayat transaksi anggota, 20 transaksi per halaman. |
-| `POST /admin/savings/{customer}` | Admin | Mencatat setoran atau penarikan. Dilindungi session dan CSRF Laravel. |
+| `GET /admin/savings/{customer}` | Admin | Saldo keseluruhan, total tiap kategori, dan riwayat sesuai filter query `category` (HISTORY, POKOK, WAJIB, SUKARELA); 20 transaksi per halaman. |
+| `POST /admin/savings/{customer}` | Admin | Mencatat setoran/penarikan dengan kategori `POKOK`, `WAJIB`, atau `SUKARELA`. Dilindungi session dan CSRF Laravel. |
 | `GET /api/health` | Publik | Health check API. Route API bisnis lama telah dinonaktifkan. |
 
 `/dashboard` hanya menjadi redirect kompatibilitas ke `/admin`. Route `/member/*`, `/workspace/*`, halaman pengelolaan karyawan, pinjaman, validasi, dan riwayat lama sudah tidak tersedia.
@@ -34,10 +34,10 @@ Halaman `/admin` mempertahankan UI daftar anggota berbentuk kartu: pencarian, fi
 ## 3. Alur setoran dan penarikan
 
 1. Admin membuka kartu anggota atau mencari berdasarkan nama/kode anggota.
-2. Admin memilih Setor atau Tarik, mengisi nominal, lalu dapat menambahkan catatan.
+2. Admin memilih Setor atau Tarik, memilih kategori Pokok/Wajib/Sukarela, mengisi nominal, lalu dapat menambahkan catatan.
 3. Browser mengirim request JSON dengan token CSRF dan UUID idempotensi.
 4. `AdminSavingsController` memvalidasi jenis transaksi, nominal, dan UUID.
-5. `SavingsLedgerService` mengunci record anggota dalam transaksi database, membaca saldo terakhir, memeriksa aturan, lalu menulis ledger.
+5. `SavingsLedgerService` mengunci record anggota dalam transaksi database, membaca saldo keseluruhan dan saldo kategori, memeriksa aturan, lalu menulis ledger.
 6. UI menampilkan saldo baru dan memuat ulang riwayat anggota.
 
 Aturan ledger:
@@ -45,8 +45,10 @@ Aturan ledger:
 - Jenis transaksi adalah `DEPOSIT` atau `WITHDRAWAL`.
 - Nominal harus positif dengan maksimal dua angka desimal.
 - Setoran hanya dapat dicatat untuk anggota `ACTIVE`.
-- Penarikan tidak dapat melebihi saldo berjalan.
+- Penarikan tidak dapat melebihi saldo keseluruhan maupun saldo pada kategori yang dipilih.
+- Total kategori adalah jumlah setoran dikurangi jumlah penarikan pada kategori itu.
 - Saldo awal dihitung nol jika anggota belum memiliki transaksi. Program tidak membuat saldo awal dari histori pinjaman/pembayaran.
+- Transaksi yang sudah ada sebelum kolom kategori ditambahkan tetap berkategori kosong. Baris lama tetap masuk saldo keseluruhan dan tampilan Riwayat; baris tersebut tidak dialokasikan ke kategori secara otomatis.
 - Pengiriman ulang UUID yang sama untuk payload transaksi sama mengembalikan transaksi sebelumnya; UUID yang dipakai dengan payload berbeda ditolak.
 - Jumlah disimpan sebagai decimal dua angka; service menghitung saldo dalam satuan sen di dalam prosesnya.
 
@@ -60,12 +62,12 @@ Browser meminta snapshot saldo untuk anggota pada halaman setiap lima detik. End
 |---|---|
 | `customers` | Profil anggota, kode, status, pekerjaan, dan alamat. Data ini tetap menjadi sumber daftar anggota. |
 | `users`, `roles` | Akun pencatat dan role; akun admin login ke aplikasi. Akun lama tetap tersimpan untuk menjaga relasi histori. |
-| `savings_transactions` | Ledger setoran/penarikan, nominal, saldo setelah transaksi, UUID idempotensi, kode referensi, admin pencatat, catatan, dan waktu. |
+| `savings_transactions` | Ledger setoran/penarikan, kategori tabungan (nullable untuk transaksi lama), nominal, saldo keseluruhan setelah transaksi, UUID idempotensi, kode referensi, admin pencatat, catatan, dan waktu. |
 | `loans`, `payments`, tabel domain lain | Data historis yang tetap disimpan, tetapi route operasional terkait tidak aktif pada aplikasi saat ini. |
 
 Relasi `savings_transactions.customer_id` mengarah ke anggota; `recorded_by` mengarah ke akun pencatat. Foreign key membatasi penghapusan anggota atau akun yang sudah punya transaksi tabungan.
 
-Migration adalah sumber kebenaran skema Laravel. Migration ledger berada di `database/migrations/2026_10_21_000001_create_savings_transactions_table.php`. Tabel lain dibuat oleh migration domain koperasi dan migration berikutnya.
+Migration adalah sumber kebenaran skema Laravel. Ledger dibuat oleh `database/migrations/2026_10_21_000001_create_savings_transactions_table.php`; kategori ditambahkan secara aman oleh `database/migrations/2026_10_21_000002_add_category_to_savings_transactions.php` tanpa mengubah transaksi lama.
 
 ## 6. Akses akun dan data anggota
 
@@ -122,7 +124,7 @@ Gunakan `database/data/members.example.csv` untuk melihat format kolom. Periksa 
 ## 10. Batasan saat ini
 
 - Auto-refresh lima detik dapat menampilkan transaksi baru dengan sedikit jeda.
-- Saldo lama tidak dimigrasikan dari sumber lain; transaksi tabungan baru dimulai dari saldo nol per anggota.
+- Saldo awal tidak diimpor dari sumber lain. Riwayat tabungan lama tetap ada sebagai transaksi tanpa kategori: masuk saldo keseluruhan tetapi tidak masuk total kategori.
 - Halaman member dan karyawan telah dihapus dari route dan view. Data lama tetap disimpan.
 - Route API bisnis lama dinonaktifkan; `/api/health` adalah satu-satunya route API aktif.
 - Saat perubahan ini dibuat, test suite tidak dijalankan. Kompilasi Blade, build Vite, daftar route, dan pemeriksaan sintaks PHP berhasil.

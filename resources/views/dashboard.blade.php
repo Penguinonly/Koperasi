@@ -108,6 +108,14 @@
                                     <option value="WITHDRAWAL">Penarikan</option>
                                 </select>
                             </label>
+                            <label class="block text-sm font-medium">Jenis tabungan
+                                <select id="transaction-category" name="category" required class="mt-1 h-11 w-full rounded-lg border border-[#c8d2d7] bg-white px-3">
+                                    <option value="">Pilih jenis tabungan</option>
+                                    <option value="POKOK">Tabungan Pokok</option>
+                                    <option value="WAJIB">Tabungan Wajib</option>
+                                    <option value="SUKARELA">Tabungan Sukarela</option>
+                                </select>
+                            </label>
                             <label class="block text-sm font-medium">Nominal (Rp)
                                 <input id="transaction-amount" name="amount" type="number" min="0.01" max="9999999999.99" step="0.01" inputmode="decimal" required class="mt-1 h-11 w-full rounded-lg border border-[#c8d2d7] px-3" placeholder="Contoh: 50000">
                             </label>
@@ -123,9 +131,24 @@
                             <h3 class="font-semibold text-[#173c4c]">Riwayat transaksi</h3>
                             <span id="history-page-label" class="text-xs text-[#66757d]"></span>
                         </div>
+                        <div class="mb-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                            <label class="block text-sm font-medium text-[#52636b]">Tampilkan
+                                <select id="history-filter" class="mt-1 h-10 w-full rounded-lg border border-[#c8d2d7] bg-white px-3 text-sm text-[#171717]">
+                                    <option value="HISTORY">Riwayat</option>
+                                    <option value="POKOK">Pokok</option>
+                                    <option value="WAJIB">Wajib</option>
+                                    <option value="SUKARELA">Sukarela</option>
+                                </select>
+                            </label>
+                            <div class="rounded-lg bg-[#f4f7f8] px-3 py-2">
+                                <p id="category-total-label" class="text-xs text-[#66757d]">Saldo keseluruhan</p>
+                                <p id="category-total-value" class="mt-1 font-semibold text-[#063c55]">Rp 0,00</p>
+                            </div>
+                        </div>
+                        <p id="uncategorized-note" class="mb-3 hidden rounded-lg bg-[#fff8df] px-3 py-2 text-xs text-[#704f00]"></p>
                         <div class="overflow-x-auto rounded-xl border border-[#e1e5e7]">
-                            <table class="w-full min-w-[560px] text-left text-sm">
-                                <thead class="bg-[#f4f7f8] text-xs uppercase tracking-wide text-[#66757d]"><tr><th class="px-3 py-2">Tanggal</th><th class="px-3 py-2">Jenis</th><th class="px-3 py-2 text-right">Nominal</th><th class="px-3 py-2 text-right">Saldo</th><th class="px-3 py-2">Admin</th></tr></thead>
+                            <table class="w-full min-w-[420px] text-left text-sm">
+                                <thead class="bg-[#f4f7f8] text-xs uppercase tracking-wide text-[#66757d]"><tr><th class="px-3 py-2">Tanggal</th><th class="px-3 py-2">Transaksi</th><th class="px-3 py-2 text-right">Nominal</th><th class="px-3 py-2 text-right">Saldo</th></tr></thead>
                                 <tbody id="transaction-rows"><tr><td colspan="4" class="px-3 py-5 text-center text-[#777]">Memuat riwayat…</td></tr></tbody>
                             </table>
                         </div>
@@ -152,6 +175,7 @@
                 let pendingTransaction = null;
 
                 const formatMoney = (value) => new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value || 0));
+                const categoryNames = { POKOK: 'Pokok', WAJIB: 'Wajib', SUKARELA: 'Sukarela' };
                 const uuid = () => window.crypto?.randomUUID ? window.crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
                     const r = Math.random() * 16 | 0;
                     return (c === 'x' ? r : (r & 3 | 8)).toString(16);
@@ -203,14 +227,25 @@
                     if (!currentMemberId) return;
                     currentPage = page;
                     const rows = document.getElementById('transaction-rows');
-                    if (showLoading) rows.innerHTML = '<tr><td colspan="5" class="px-3 py-5 text-center text-[#777]">Memuat riwayat…</td></tr>';
+                    const categoryFilter = document.getElementById('history-filter').value;
+                    if (showLoading) rows.innerHTML = '<tr><td colspan="4" class="px-3 py-5 text-center text-[#777]">Memuat riwayat…</td></tr>';
                     try {
-                        const response = await fetch(`${apiBase}/${currentMemberId}?page=${page}`, { headers: { Accept: 'application/json' } });
+                        const response = await fetch(`${apiBase}/${currentMemberId}?page=${page}&category=${categoryFilter}`, { headers: { Accept: 'application/json' } });
                         const payload = await response.json();
                         if (!response.ok) throw new Error(payload.message || 'Riwayat transaksi gagal dimuat.');
                         document.getElementById('modal-member-name').textContent = payload.customer.name;
                         document.getElementById('modal-member-code').textContent = `Anggota ${payload.customer.member_code || '—'} · ${payload.customer.status}`;
                         document.getElementById('modal-balance').textContent = `Rp ${formatMoney(payload.balance)}`;
+                        document.getElementById('history-filter').value = payload.category_filter;
+                        document.getElementById('category-total-label').textContent = categoryFilter === 'HISTORY'
+                            ? 'Saldo keseluruhan'
+                            : `Total tabungan ${categoryNames[categoryFilter]}`;
+                        document.getElementById('category-total-value').textContent = `Rp ${formatMoney(categoryFilter === 'HISTORY' ? payload.balance : payload.category_totals[categoryFilter])}`;
+                        const unclassifiedNote = document.getElementById('uncategorized-note');
+                        unclassifiedNote.textContent = payload.uncategorized_transactions > 0
+                            ? `${payload.uncategorized_transactions} transaksi lama belum memiliki kategori. Transaksi tersebut tetap masuk saldo keseluruhan dan Riwayat.`
+                            : '';
+                        unclassifiedNote.classList.toggle('hidden', payload.uncategorized_transactions === 0);
                         const items = payload.transactions.data;
                         rows.replaceChildren();
                         if (items.length === 0) {
@@ -226,13 +261,15 @@
                                 const row = document.createElement('tr');
                                 row.className = 'border-t border-[#e8edef]';
                                 const date = new Date(transaction.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
-                                [date, transaction.type === 'DEPOSIT' ? 'Setoran' : 'Penarikan', `Rp ${formatMoney(transaction.amount)}`, `Rp ${formatMoney(transaction.balance_after)}`, transaction.recorded_by?.name || 'Admin'].forEach((value, index) => {
+                                const transactionType = transaction.type === 'DEPOSIT' ? 'Setoran' : 'Penarikan';
+                                const categoryName = categoryNames[transaction.category] || 'Belum dikategorikan';
+                                [date, `${transactionType} · ${categoryName}`, `Rp ${formatMoney(transaction.amount)}`, `Rp ${formatMoney(transaction.balance_after)}`].forEach((value, index) => {
                                     const cell = document.createElement('td');
                                     cell.className = `px-3 py-2 ${index > 1 ? 'text-right' : ''}`;
                                     cell.textContent = value;
                                     row.append(cell);
                                 });
-                                row.title = `${transaction.reference_code}${transaction.note ? ` · ${transaction.note}` : ''}`;
+                                row.title = `${transaction.reference_code} · ${transaction.recorded_by?.name || 'Admin'}${transaction.note ? ` · ${transaction.note}` : ''}`;
                                 rows.append(row);
                             });
                         }
@@ -260,6 +297,8 @@
                     document.getElementById('modal-member-code').textContent = `Anggota ${card.dataset.memberCode} · ${card.dataset.memberStatus}`;
                     document.getElementById('modal-balance').textContent = card.querySelector('.member-balance').textContent;
                     document.getElementById('transaction-type').value = type;
+                    document.getElementById('transaction-category').value = '';
+                    document.getElementById('history-filter').value = 'HISTORY';
                     document.getElementById('transaction-amount').value = '';
                     document.getElementById('transaction-note').value = '';
                     document.getElementById('form-message').classList.add('hidden');
@@ -288,6 +327,7 @@
                 document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && currentMemberId) closeModal(); });
                 document.getElementById('history-previous').addEventListener('click', () => loadMember(Math.max(1, currentPage - 1)));
                 document.getElementById('history-next').addEventListener('click', () => loadMember(Math.min(lastPage, currentPage + 1)));
+                document.getElementById('history-filter').addEventListener('change', () => loadMember(1));
 
                 form.addEventListener('submit', async (event) => {
                     event.preventDefault();
@@ -299,10 +339,11 @@
                     try {
                         const transactionData = {
                             type: document.getElementById('transaction-type').value,
+                            category: document.getElementById('transaction-category').value,
                             amount: document.getElementById('transaction-amount').value,
                             note: document.getElementById('transaction-note').value,
                         };
-                        const requestFingerprint = JSON.stringify([currentMemberId, transactionData.type, transactionData.amount, transactionData.note]);
+                        const requestFingerprint = JSON.stringify([currentMemberId, transactionData.type, transactionData.category, transactionData.amount, transactionData.note]);
                         if (!pendingTransaction || pendingTransaction.fingerprint !== requestFingerprint) {
                             pendingTransaction = { fingerprint: requestFingerprint, key: uuid() };
                         }
@@ -323,6 +364,7 @@
                         await loadMember(1, false);
                         await refreshSnapshot();
                         document.getElementById('transaction-amount').value = '';
+                        document.getElementById('transaction-category').value = '';
                         document.getElementById('transaction-note').value = '';
                     } catch (error) {
                         message.textContent = error.message;

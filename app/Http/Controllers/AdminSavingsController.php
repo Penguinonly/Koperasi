@@ -10,13 +10,22 @@ use Illuminate\Http\Request;
 
 class AdminSavingsController extends Controller
 {
-    public function show(Customer $customer): JsonResponse
+    public function show(Request $request, Customer $customer, SavingsLedgerService $ledger): JsonResponse
     {
+        $filter = $request->validate([
+            'category' => ['nullable', 'in:HISTORY,POKOK,WAJIB,SUKARELA'],
+        ])['category'] ?? 'HISTORY';
+
         $latestTransaction = $customer->latestSavingsTransaction;
-        $transactions = $customer->savingsTransactions()
+        $transactionQuery = $customer->savingsTransactions()
             ->with('recordedBy:id,name')
-            ->latest('id')
-            ->paginate(20);
+            ->latest('id');
+
+        if ($filter !== 'HISTORY') {
+            $transactionQuery->where('category', $filter);
+        }
+
+        $transactions = $transactionQuery->paginate(20)->withQueryString();
 
         return response()->json([
             'customer' => [
@@ -26,6 +35,9 @@ class AdminSavingsController extends Controller
                 'status' => $customer->status,
             ],
             'balance' => $latestTransaction?->balance_after ?? '0.00',
+            'category_filter' => $filter,
+            'category_totals' => $ledger->categoryTotals($customer),
+            'uncategorized_transactions' => $customer->savingsTransactions()->whereNull('category')->count(),
             'transactions' => $transactions,
         ]);
     }
@@ -34,6 +46,7 @@ class AdminSavingsController extends Controller
     {
         $data = $request->validate([
             'type' => ['required', 'in:DEPOSIT,WITHDRAWAL'],
+            'category' => ['required', 'in:POKOK,WAJIB,SUKARELA'],
             'amount' => ['required', 'numeric', 'decimal:0,2', 'min:0.01', 'max:9999999999.99'],
             'idempotency_key' => ['required', 'uuid'],
             'note' => ['nullable', 'string', 'max:1000'],
@@ -43,6 +56,7 @@ class AdminSavingsController extends Controller
             $customer,
             $request->user(),
             $data['type'],
+            $data['category'],
             (string) $data['amount'],
             $data['idempotency_key'],
             $data['note'] ?? null,

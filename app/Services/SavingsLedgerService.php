@@ -15,6 +15,7 @@ class SavingsLedgerService
         Customer $customer,
         User $admin,
         string $type,
+        string $category,
         string $amount,
         string $idempotencyKey,
         ?string $note = null,
@@ -24,13 +25,14 @@ class SavingsLedgerService
             throw ValidationException::withMessages(['amount' => 'Nominal harus lebih besar dari nol.']);
         }
 
-        return DB::transaction(function () use ($customer, $admin, $type, $amountMinor, $idempotencyKey, $note) {
+        return DB::transaction(function () use ($customer, $admin, $type, $category, $amountMinor, $idempotencyKey, $note) {
             $lockedCustomer = Customer::query()->whereKey($customer->id)->lockForUpdate()->firstOrFail();
             $existing = SavingsTransaction::query()->where('idempotency_key', $idempotencyKey)->first();
 
             if ($existing) {
                 if ((int) $existing->customer_id === (int) $lockedCustomer->id
                     && $existing->type === $type
+                    && $existing->category === $category
                     && $this->toMinor($existing->amount) === $amountMinor
                     && $existing->note === $note) {
                     return $existing;
@@ -46,6 +48,13 @@ class SavingsLedgerService
             $lastTransaction = $lockedCustomer->savingsTransactions()->orderByDesc('id')->first();
             $currentBalanceMinor = $lastTransaction ? $this->toMinor($lastTransaction->balance_after) : 0;
 
+            $currentCategoryBalanceMinor = $this->categoryBalanceMinor($lockedCustomer, $category);
+            if ($type === 'WITHDRAWAL' && $amountMinor > $currentCategoryBalanceMinor) {
+                throw ValidationException::withMessages([
+                    'amount' => 'Saldo tabungan '.strtolower($category).' tidak mencukupi untuk penarikan ini.',
+                ]);
+            }
+
             if ($type === 'WITHDRAWAL' && $amountMinor > $currentBalanceMinor) {
                 throw ValidationException::withMessages(['amount' => 'Saldo tabungan tidak mencukupi untuk penarikan ini.']);
             }
@@ -57,6 +66,7 @@ class SavingsLedgerService
             return $lockedCustomer->savingsTransactions()->create([
                 'recorded_by' => $admin->id,
                 'type' => $type,
+                'category' => $category,
                 'amount' => $this->fromMinor($amountMinor),
                 'balance_after' => $this->fromMinor($balanceAfterMinor),
                 'idempotency_key' => $idempotencyKey,
@@ -64,6 +74,35 @@ class SavingsLedgerService
                 'note' => $note,
             ]);
         }, attempts: 3);
+    }
+
+    public function categoryTotals(Customer $customer): array
+    {
+        $totals = ['POKOK' => 0, 'WAJIB' => 0, 'SUKARELA' => 0];
+
+        $customer->savingsTransactions()
+            ->whereNotNull('category')
+            ->get(['category', 'type', 'amount'])
+            ->each(function (SavingsTransaction $transaction) use (&$totals): void {
+                if (!array_key_exists($transaction->category, $totals)) {
+                    return;
+                }
+
+                $amountMinor = $this->toMinor($transaction->amount);
+                $totals[$transaction->category] += $transaction->type === 'DEPOSIT' ? $amountMinor : -$amountMinor;
+            });
+
+        return array_map(fn (int $minor): string => $this->fromMinor($minor), $totals);
+    }
+
+    private function categoryBalanceMinor(Customer $customer, string $category): int
+    {
+        return $customer->savingsTransactions()
+            ->where('category', $category)
+            ->get(['type', 'amount'])
+            ->sum(fn (SavingsTransaction $transaction): int => $transaction->type === 'DEPOSIT'
+                ? $this->toMinor($transaction->amount)
+                : -$this->toMinor($transaction->amount));
     }
 
     private function toMinor(string $amount): int

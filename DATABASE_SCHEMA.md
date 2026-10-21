@@ -518,6 +518,7 @@ CREATE TABLE savings_transactions (
     customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
     recorded_by BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     type VARCHAR(20) NOT NULL CHECK (type IN ('DEPOSIT', 'WITHDRAWAL')),
+    category VARCHAR(20) NULL, -- POKOK, WAJIB, SUKARELA; NULL for legacy rows
     amount DECIMAL(12, 2) NOT NULL,
     balance_after DECIMAL(12, 2) NOT NULL,
     idempotency_key UUID NOT NULL UNIQUE,
@@ -529,3 +530,5 @@ CREATE TABLE savings_transactions (
 ```
 
 The transaction rows are the source of truth for savings balances. The current balance is the `balance_after` value on the latest transaction; members without ledger rows display zero. For the exact database-specific migration, use the Laravel migration rather than this SQL illustration.
+
+Migration `2026_10_21_000002_add_category_to_savings_transactions.php` adds nullable `category` to existing installations. New web transactions require a category. Existing rows stay `NULL` so the application does not invent a category; they remain included in overall `balance_after` and the unfiltered history, but not category totals.
